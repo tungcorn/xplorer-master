@@ -541,6 +541,13 @@ export const themes: Record<string, ThemeDef> = {
     surface: '#f8fafc',
     text: '#1e293b',
   },
+  dracula: {
+    name: 'Dracula',
+    primary: '#BD93F9',
+    bg: '#282A36',
+    surface: '#343746',
+    text: '#F8F8F2',
+  },
 };
 
 // Helper to create a config icon

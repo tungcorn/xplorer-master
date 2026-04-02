@@ -64,6 +64,14 @@ body {
   --glow-purple: none;
   --glow-pink: none;
   --glow-green: none;
+
+  /* Titlebar — defaults to surface color, overridden by themes like Dracula */
+  --xp-titlebar: var(--xp-surface);
+  --xp-separator: var(--xp-border);
+  --xp-alternating-row: var(--xp-surface-light);
+  --xp-folder: var(--xp-blue);
+  --xp-selection: rgba(99, 102, 241, 0.2);
+  --xp-match: #fbbf24;
 }
 
 /* Theme Classes */
@@ -114,9 +122,145 @@ body {
   --glow-green: none;
 }
 
-/* Additional themes available via marketplace extensions:
-   Tokyo Night, Dracula, Nord, Catppuccin, High Contrast,
-   Cyberpunk, Sunset, Ocean Deep, Aurora, Rosé Pine, Solarized Dark */
+/* ═══════════════════════════════════════════════════════════════════
+   DRACULA THEME — File Pilot-inspired color mapping
+   Matches the Dracula palette from File Pilot's theme system.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.theme-dracula {
+  --background: #282a36;
+  --foreground: #f8f8f2;
+  --muted: #44475a;
+  --muted-foreground: #6272a4;
+  --popover: #21222c;
+  --popover-foreground: #f8f8f2;
+  --card: #343746;
+  --card-foreground: #f8f8f2;
+  --border: #343746;
+  --input: #343746;
+  --primary: #bd93f9;
+  --primary-foreground: #282a36;
+  --secondary: #44475a;
+  --secondary-foreground: #f8f8f2;
+  --accent: #44475a;
+  --accent-foreground: #f8f8f2;
+  --destructive: #ff5555;
+  --destructive-foreground: #f8f8f2;
+  --ring: #bd93f9;
+
+  --xp-bg: #282a36;
+  --xp-bg-gradient: none;
+  --xp-surface: #343746;
+  --xp-surface-light: #44475a;
+  --xp-titlebar: #21222c;
+  --xp-blue: #bd93f9;
+  --xp-blue-dark: #a67bf3;
+  --xp-purple: #bd93f9;
+  --xp-pink: #ff79c6;
+  --xp-green: #50fa7b;
+  --xp-orange: #ffb86c;
+  --xp-yellow: #f1fa8c;
+  --xp-red: #ff5555;
+  --xp-cyan: #8be9fd;
+  --xp-text: #f8f8f2;
+  --xp-text-secondary: #7b8db8;
+  --xp-text-muted: #6272a4;
+  --xp-border: #343746;
+  --xp-border-light: #44475a;
+  --xp-popover: #21222c;
+  --xp-separator: #21222c;
+  --xp-alternating-row: #2d2f3b;
+  --xp-folder: #bd93f9;
+  --xp-selection: rgba(189, 147, 249, 0.25);
+  --xp-match: #f1fa8c;
+
+  --glow-blue: none;
+  --glow-purple: none;
+  --glow-pink: none;
+  --glow-green: none;
+}
+
+html.theme-dracula {
+  background: #191a21;
+  min-height: 100vh;
+}
+
+.theme-dracula body {
+  background: #282a36 !important;
+}
+
+/* ── Dracula surface panels ──────────────────────────────────────── */
+.theme-dracula .bg-xp-surface {
+  background-color: #343746;
+  border-color: #343746;
+}
+
+.theme-dracula .bg-xp-surface-light {
+  background-color: #44475a;
+}
+
+/* ── Dracula titlebar ────────────────────────────────────────────── */
+.theme-dracula .bg-xp-titlebar {
+  background-color: #21222c;
+}
+
+/* ── Dracula interactive states ──────────────────────────────────── */
+.theme-dracula .file-item:hover {
+  background-color: #44475a;
+}
+.theme-dracula .file-item.selected {
+  background-color: rgba(189, 147, 249, 0.2);
+  border: 1px solid rgba(189, 147, 249, 0.4);
+}
+.theme-dracula .sidebar-item:hover {
+  background-color: #44475a;
+}
+.theme-dracula .sidebar-item.active {
+  background-color: rgba(189, 147, 249, 0.2);
+  color: #bd93f9;
+}
+.theme-dracula .tab-item.active {
+  background-color: #282a36;
+  border-bottom-color: #bd93f9;
+}
+
+/* ── Dracula scrollbar ───────────────────────────────────────────── */
+.theme-dracula ::-webkit-scrollbar-track {
+  background: #282a36;
+}
+.theme-dracula ::-webkit-scrollbar-thumb {
+  background: #44475a;
+  border-radius: 4px;
+}
+.theme-dracula ::-webkit-scrollbar-thumb:hover {
+  background: #6272a4;
+}
+
+/* ── Dracula borders ─────────────────────────────────────────────── */
+.theme-dracula .border-xp-border {
+  border-color: #343746;
+}
+
+/* ── Dracula inputs ──────────────────────────────────────────────── */
+.theme-dracula input,
+.theme-dracula select,
+.theme-dracula textarea {
+  background-color: #21222c !important;
+  border: 1px solid #343746 !important;
+  color: #f8f8f2 !important;
+}
+
+/* ── Dracula selection ───────────────────────────────────────────── */
+.theme-dracula ::selection {
+  background-color: rgba(189, 147, 249, 0.3);
+  color: #f8f8f2;
+}
+
+/* ── Dracula nested panels ───────────────────────────────────────── */
+.theme-dracula .bg-xp-surface .bg-xp-bg,
+.theme-dracula .bg-xp-bg .bg-xp-bg {
+  background-color: #21222c;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    LIGHT THEME

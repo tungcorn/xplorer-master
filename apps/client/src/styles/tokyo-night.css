@@ -10,6 +10,9 @@
 .bg-xp-surface-light {
   background-color: var(--xp-surface-light);
 }
+.bg-xp-titlebar {
+  background-color: var(--xp-titlebar);
+}
 .bg-xp-popover {
   background-color: var(--xp-popover);
 }

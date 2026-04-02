@@ -119,7 +119,7 @@ export const useLayoutState = (): LayoutState => {
 
   // Panel sizes
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(() =>
-    loadUiState('leftSidebarWidth', 200),
+    loadUiState('leftSidebarWidth', 245),
   );
   const [rightSidebarWidth, setRightSidebarWidth] = useState(() =>
     loadUiState('rightSidebarWidth', 320),
@@ -140,7 +140,7 @@ export const useLayoutState = (): LayoutState => {
   }, []);
 
   // View mode
-  const [viewMode, setViewMode] = useState<string>(() => loadUiState('viewMode', 'medium'));
+  const [viewMode, setViewMode] = useState<string>(() => loadUiState('viewMode', 'details'));
 
   // Sorting
   const [sortBy, setSortBy] = useState<SortField>(() => loadUiState<SortField>('sortBy', 'name'));

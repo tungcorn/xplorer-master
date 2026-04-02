@@ -174,7 +174,7 @@ const TopBar = forwardRef<TopBarHandle, TopBarProps>(
     }, []);
 
     return (
-      <div data-tour={dataTour} className="bg-xp-surface border-xp-border flex-none border-b">
+      <div data-tour={dataTour} className="bg-xp-titlebar border-xp-border flex-none border-b">
         {/* Single compact row: sidebar toggle + nav + tabs + window controls */}
         <div
           className="flex items-center gap-0.5 px-2"

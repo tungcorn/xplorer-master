@@ -584,6 +584,7 @@ const MainLayout = (props: MainLayoutProps) => {
             currentPath={currentPath}
             activeTab={activeTabObj}
             vimState={vimState}
+            viewMode={viewMode}
           />
 
           {/* Panel Toggle Buttons */}

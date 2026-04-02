@@ -8,8 +8,8 @@ interface DetailsViewProps extends ViewComponentProps {
   fileGroups?: FileGroup[] | null;
 }
 
-const DETAILS_ROW_HEIGHT = 40;
-const GROUP_HEADER_HEIGHT = 36;
+const DETAILS_ROW_HEIGHT = 32;
+const GROUP_HEADER_HEIGHT = 30;
 const DETAILS_VIRTUALIZATION_THRESHOLD = 200;
 
 type FlatItem =
@@ -84,21 +84,30 @@ const FileRow = React.memo(
         tabIndex={0}
         data-file-path={file.path}
         data-drop-target={file.is_dir ? file.path : undefined}
-        className={`hover:bg-xp-surface-light grid cursor-pointer grid-cols-12 items-center gap-3 px-3 py-2.5 transition-colors ${
+        className={`hover:bg-xp-surface-light grid cursor-pointer grid-cols-12 items-center px-3 py-1 transition-colors ${
           selectedFiles.has(file.path)
-            ? 'bg-xp-purple/20 border-xp-purple/40 border'
-            : 'text-xp-text border border-transparent'
+            ? 'border-l-2 border-l-[var(--xp-folder,var(--xp-blue))]'
+            : 'text-xp-text border-l-2 border-l-transparent'
         } `}
+        style={
+          selectedFiles.has(file.path)
+            ? { backgroundColor: 'var(--xp-selection, rgba(99,102,241,0.2))' }
+            : undefined
+        }
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
         onKeyDown={handleKeyDown}
       >
-        <div className="col-span-1 flex justify-center">
-          <span className="text-lg">{getFileIcon(file)}</span>
+        <div className="col-span-6 flex min-w-0 items-center gap-2">
+          <span className="flex-shrink-0 text-base">{getFileIcon(file)}</span>
+          <span className="truncate text-sm">{file.name}</span>
         </div>
-        <div className="col-span-5 min-w-0">
-          <div className="truncate font-medium">{file.name}</div>
+        <div className="text-xp-text-muted col-span-2 text-xs">
+          {file.is_dir ? 'Folder' : file.file_type}
+        </div>
+        <div className="text-xp-text-muted col-span-2 text-right font-mono text-xs">
+          {formatDate(file.modified)}
         </div>
         <div className="text-xp-text-muted col-span-2 text-right text-xs">
           {(() => {
@@ -108,7 +117,7 @@ const FileRow = React.memo(
             }
             return (
               <button
-                className="text-xp-text-muted hover:text-xp-accent underline decoration-dotted transition-colors"
+                className="text-xp-text-muted hover:text-xp-text underline decoration-dotted transition-colors"
                 onClick={handleCalculateClick}
                 title="Click to calculate folder size"
               >
@@ -117,14 +126,6 @@ const FileRow = React.memo(
             );
           })()}
         </div>
-        <div className="text-xp-text-muted col-span-2 text-center text-xs">
-          <span className="bg-xp-surface inline-block rounded px-2 py-1 font-mono text-xs capitalize">
-            {file.is_dir ? 'Folder' : file.file_type}
-          </span>
-        </div>
-        <div className="text-xp-text-muted col-span-2 text-right font-mono text-xs">
-          {formatDate(file.modified)}
-        </div>
       </div>
     );
   },
@@ -132,8 +133,11 @@ const FileRow = React.memo(
 
 const GroupHeader = React.memo(({ name, count }: { name: string; count: number }) => (
   <div
-    className="bg-xp-surface-secondary border-xp-border flex items-center border-b px-3 py-2"
-    style={{ height: GROUP_HEADER_HEIGHT }}
+    className="border-xp-border flex items-center border-b px-3 py-1.5"
+    style={{
+      height: GROUP_HEADER_HEIGHT,
+      backgroundColor: 'var(--xp-alternating-row, var(--xp-surface-light))',
+    }}
   >
     <span className="text-xp-text-secondary text-xs font-semibold uppercase tracking-wide">
       {name}
@@ -235,19 +239,18 @@ const DetailsView = (props: DetailsViewProps) => {
 
   const header = (
     <div className="bg-xp-surface border-xp-border sticky top-0 z-20 border-b" role="row">
-      <div className="text-xp-text-muted grid grid-cols-12 items-center gap-3 px-3 py-3 text-xs font-medium">
-        <div className="col-span-1" role="columnheader" aria-label="Icon" />
-        <div className="col-span-5" role="columnheader">
+      <div className="text-xp-text-muted grid grid-cols-12 items-center px-3 py-2 text-xs font-medium">
+        <div className="col-span-6" role="columnheader">
           Name
         </div>
-        <div className="col-span-2 text-right" role="columnheader">
-          Size
-        </div>
-        <div className="col-span-2 text-center" role="columnheader">
+        <div className="col-span-2" role="columnheader">
           Type
         </div>
         <div className="col-span-2 text-right" role="columnheader">
           Modified
+        </div>
+        <div className="col-span-2 text-right" role="columnheader">
+          Size
         </div>
       </div>
     </div>
@@ -323,6 +326,7 @@ const DetailsView = (props: DetailsViewProps) => {
                 width: '100%',
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
+                borderBottom: '1px solid var(--xp-border)',
               }}
             >
               {renderFlatItem(item)}
