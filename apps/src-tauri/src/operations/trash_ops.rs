@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::time::SystemTime;
 
 use crate::operations::types::*;
 use crate::operations::validate_file_path;

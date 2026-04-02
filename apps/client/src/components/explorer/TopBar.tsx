@@ -177,13 +177,13 @@ const TopBar = forwardRef<TopBarHandle, TopBarProps>(
 
     return (
       <div data-tour={dataTour} className="bg-xp-surface border-xp-border flex-none border-b">
-        {/* Row 1: Title bar (draggable) */}
+        {/* Single compact row: sidebar toggle + nav + tabs + window controls */}
         <div
-          className="flex items-center justify-between px-4 py-1"
+          className="flex items-center gap-0.5 px-2"
           onMouseDown={(e) => {
             if (
               !(e.target as HTMLElement).closest(
-                'button, input, a, select, textarea, [role="button"]',
+                'button, input, a, select, textarea, [role="button"], [role="tab"]',
               )
             ) {
               e.preventDefault();
@@ -193,66 +193,32 @@ const TopBar = forwardRef<TopBarHandle, TopBarProps>(
           onDoubleClick={(e) => {
             if (
               !(e.target as HTMLElement).closest(
-                'button, input, a, select, textarea, [role="button"]',
+                'button, input, a, select, textarea, [role="button"], [role="tab"]',
               )
             ) {
               appWindowRef.current?.toggleMaximize();
             }
           }}
         >
-          <div
-            className="flex items-center space-x-3"
-            style={isMac ? { paddingLeft: '60px' } : undefined}
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+            className="hover:bg-xp-surface-light flex-shrink-0 rounded p-1 transition-colors"
+            aria-label={t('topBar.toggleSidebar')}
+            title={t('topBar.toggleSidebarShortcut')}
+            style={isMac ? { marginLeft: '60px' } : undefined}
           >
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-                className="hover:bg-xp-surface-light rounded p-1 transition-colors"
-                aria-label={t('topBar.toggleSidebar')}
-                title={t('topBar.toggleSidebarShortcut')}
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              <h1 className="text-sm font-medium">Xplorer</h1>
-            </div>
-          </div>
-          {/* Spacer — search is in the left sidebar */}
-          <div className="flex-1" />
-          {!isMac && (
-            <div className="ml-2 flex items-center" role="toolbar" aria-label="Window controls">
-              <button
-                onClick={() => appWindowRef.current?.minimize()}
-                className="hover:bg-xp-surface-light rounded p-2 transition-colors"
-                aria-label={t('topBar.minimize')}
-              >
-                <Minus size={14} />
-              </button>
-              <button
-                onClick={() => appWindowRef.current?.toggleMaximize()}
-                className="hover:bg-xp-surface-light rounded p-2 transition-colors"
-                aria-label={isMaximized ? t('topBar.restore') : t('topBar.maximize')}
-              >
-                {isMaximized ? <Copy size={14} /> : <Square size={14} />}
-              </button>
-              <button
-                onClick={() => appWindowRef.current?.close()}
-                className="xp-close-btn rounded p-2 transition-colors"
-                aria-label={t('topBar.closeWindow')}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          )}
-        </div>
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
 
-        {/* Row 2: Nav buttons + Tabs + Split controls */}
-        <div className="flex items-center gap-0.5 px-2">
+          <div className="bg-xp-border mx-0.5 h-5 w-px flex-shrink-0" />
+
           {/* Nav buttons */}
           {navigateBackInHistory && (
             <button
@@ -553,9 +519,37 @@ const TopBar = forwardRef<TopBarHandle, TopBarProps>(
               </button>
             )}
           </div>
-        </div>
 
-        {/* Cross-tab selection floating action bar */}
+          {!isMac && (
+            <div
+              className="ml-1 flex flex-shrink-0 items-center"
+              role="toolbar"
+              aria-label="Window controls"
+            >
+              <button
+                onClick={() => appWindowRef.current?.minimize()}
+                className="hover:bg-xp-surface-light rounded p-1.5 transition-colors"
+                aria-label={t('topBar.minimize')}
+              >
+                <Minus size={14} />
+              </button>
+              <button
+                onClick={() => appWindowRef.current?.toggleMaximize()}
+                className="hover:bg-xp-surface-light rounded p-1.5 transition-colors"
+                aria-label={isMaximized ? t('topBar.restore') : t('topBar.maximize')}
+              >
+                {isMaximized ? <Copy size={14} /> : <Square size={14} />}
+              </button>
+              <button
+                onClick={() => appWindowRef.current?.close()}
+                className="xp-close-btn rounded p-1.5 transition-colors"
+                aria-label={t('topBar.closeWindow')}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+        </div>
         {hasMultiTabSelection && crossTabTotalCount > 0 && (
           <div
             style={{

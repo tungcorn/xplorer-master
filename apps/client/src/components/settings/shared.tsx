@@ -268,7 +268,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showFileExtensions: true,
   enableNotifications: true,
   autoSave: true,
-  fontSize: 'medium',
+  fontSize: 'small',
   sidebarWidth: 'medium',
   reducedMotion: false,
   enhancedFocus: false,

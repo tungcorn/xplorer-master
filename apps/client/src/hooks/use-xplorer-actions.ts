@@ -71,9 +71,11 @@ export interface XplorerActionsDeps {
   leftSidebarCollapsed: boolean;
   rightSidebarCollapsed: boolean;
   bottomPanelCollapsed: boolean;
+  extensionsBarCollapsed: boolean;
   setLeftSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   setRightSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   setBottomPanelCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  setExtensionsBarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   setBottomPanelTab: React.Dispatch<React.SetStateAction<BottomPanelTabId>>;
   setViewMode: React.Dispatch<React.SetStateAction<string>>;
 
@@ -132,9 +134,11 @@ export const useXplorerActions = (deps: XplorerActionsDeps) => {
     leftSidebarCollapsed,
     rightSidebarCollapsed,
     bottomPanelCollapsed,
+    extensionsBarCollapsed: _extensionsBarCollapsed,
     setLeftSidebarCollapsed,
     setRightSidebarCollapsed,
     setBottomPanelCollapsed,
+    setExtensionsBarCollapsed: _setExtensionsBarCollapsed,
     setBottomPanelTab,
     setViewMode,
     setShowChangeSummaryToast,

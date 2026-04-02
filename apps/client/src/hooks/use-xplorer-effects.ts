@@ -109,6 +109,8 @@ export interface XplorerEffectsDeps {
   setRightSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   bottomPanelCollapsed: boolean;
   setBottomPanelCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  extensionsBarCollapsed: boolean;
+  setExtensionsBarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   rightPanelTab: string;
   setRightPanelTab: React.Dispatch<React.SetStateAction<string>>;
   bottomPanelTab: BottomPanelTabId;
@@ -194,6 +196,8 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
     setRightSidebarCollapsed,
     bottomPanelCollapsed,
     setBottomPanelCollapsed,
+    extensionsBarCollapsed,
+    setExtensionsBarCollapsed: _setExtensionsBarCollapsed,
     rightPanelTab,
     setRightPanelTab,
     bottomPanelTab,
@@ -743,6 +747,7 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
         leftSidebarCollapsed,
         rightSidebarCollapsed,
         bottomPanelCollapsed,
+        extensionsBarCollapsed,
         rightPanelTab,
         bottomPanelTab,
         leftSidebarWidth,
@@ -771,6 +776,7 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
     leftSidebarCollapsed,
     rightSidebarCollapsed,
     bottomPanelCollapsed,
+    extensionsBarCollapsed,
     rightPanelTab,
     bottomPanelTab,
     leftSidebarWidth,

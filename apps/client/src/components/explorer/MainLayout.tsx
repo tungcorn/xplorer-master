@@ -71,6 +71,8 @@ export interface MainLayoutProps {
   setRightSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   bottomPanelCollapsed: boolean;
   setBottomPanelCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  extensionsBarCollapsed: boolean;
+  setExtensionsBarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   leftSidebarWidth: number;
   rightSidebarWidth: number;
   bottomPanelHeight: number;
@@ -224,6 +226,8 @@ const MainLayout = (props: MainLayoutProps) => {
     setRightSidebarCollapsed,
     bottomPanelCollapsed,
     setBottomPanelCollapsed,
+    extensionsBarCollapsed,
+    setExtensionsBarCollapsed: _setExtensionsBarCollapsed,
     leftSidebarWidth,
     rightSidebarWidth,
     bottomPanelHeight,
@@ -524,13 +528,15 @@ const MainLayout = (props: MainLayoutProps) => {
             </div>
 
             {/* Vertical Extensions Bar */}
-            <VerticalExtensionsBar
-              data-tour="extensions-bar"
-              rightPanelTab={rightPanelTab}
-              setRightPanelTab={setRightPanelTab}
-              rightSidebarCollapsed={rightSidebarCollapsed}
-              setRightSidebarCollapsed={setRightSidebarCollapsed}
-            />
+            {!extensionsBarCollapsed && (
+              <VerticalExtensionsBar
+                data-tour="extensions-bar"
+                rightPanelTab={rightPanelTab}
+                setRightPanelTab={setRightPanelTab}
+                rightSidebarCollapsed={rightSidebarCollapsed}
+                setRightSidebarCollapsed={setRightSidebarCollapsed}
+              />
+            )}
 
             {/* Right Sidebar */}
             {!rightSidebarCollapsed && (

@@ -37,6 +37,8 @@ export interface LayoutState {
   setRightSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   bottomPanelCollapsed: boolean;
   setBottomPanelCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  extensionsBarCollapsed: boolean;
+  setExtensionsBarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Panel sizes
   leftSidebarWidth: number;
@@ -80,10 +82,13 @@ export const useLayoutState = (): LayoutState => {
     loadUiState('leftSidebarCollapsed', false),
   );
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(() =>
-    loadUiState('rightSidebarCollapsed', false),
+    loadUiState('rightSidebarCollapsed', true),
   );
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(() =>
     loadUiState('bottomPanelCollapsed', true),
+  );
+  const [extensionsBarCollapsed, setExtensionsBarCollapsed] = useState(() =>
+    loadUiState('extensionsBarCollapsed', true),
   );
 
   // Panel tabs
@@ -114,7 +119,7 @@ export const useLayoutState = (): LayoutState => {
 
   // Panel sizes
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(() =>
-    loadUiState('leftSidebarWidth', 256),
+    loadUiState('leftSidebarWidth', 200),
   );
   const [rightSidebarWidth, setRightSidebarWidth] = useState(() =>
     loadUiState('rightSidebarWidth', 320),
@@ -148,6 +153,8 @@ export const useLayoutState = (): LayoutState => {
     setRightSidebarCollapsed,
     bottomPanelCollapsed,
     setBottomPanelCollapsed,
+    extensionsBarCollapsed,
+    setExtensionsBarCollapsed,
     leftSidebarWidth,
     setLeftSidebarWidth,
     rightSidebarWidth,

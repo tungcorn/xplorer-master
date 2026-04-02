@@ -332,6 +332,38 @@ fn get_volume_label(root: &str) -> Option<String> {
     }
 }
 
+#[cfg(windows)]
+fn get_disk_space(path: &std::path::Path) -> Option<(u64, u64)> {
+    use std::ffi::OsStr;
+    use std::iter::once;
+    use std::os::windows::ffi::OsStrExt;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetDiskFreeSpaceExW(
+            lpDirectoryName: *const u16,
+            lpFreeBytesAvailableToCaller: *mut u64,
+            lpTotalNumberOfBytes: *mut u64,
+            lpTotalNumberOfFreeBytes: *mut u64,
+        ) -> i32;
+    }
+
+    let wide: Vec<u16> = OsStr::new(path.as_os_str())
+        .encode_wide()
+        .chain(once(0))
+        .collect();
+    let mut free_available: u64 = 0;
+    let mut total: u64 = 0;
+    let mut total_free: u64 = 0;
+    let ok = unsafe {
+        GetDiskFreeSpaceExW(wide.as_ptr(), &mut free_available, &mut total, &mut total_free)
+    };
+    if ok == 0 {
+        return None;
+    }
+    Some((total, total_free))
+}
+
 #[derive(serde::Serialize)]
 pub struct FileSearchMatch {
     pub file: String,

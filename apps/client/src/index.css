@@ -14,12 +14,12 @@ body {
 }
 
 :root {
-  /* Glass theme defaults (boots glassmorphic before JS loads) */
-  --background: transparent;
+  /* Clean dark theme defaults */
+  --background: #1a1a2e;
   --foreground: rgba(255, 255, 255, 0.92);
   --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: rgba(255, 255, 255, 0.6);
-  --popover: rgba(15, 15, 35, 0.85);
+  --popover: #22223a;
   --popover-foreground: rgba(255, 255, 255, 0.92);
   --card: rgba(255, 255, 255, 0.06);
   --card-foreground: rgba(255, 255, 255, 0.92);
@@ -36,18 +36,11 @@ body {
   --ring: #6366f1;
   --radius: 0.5rem;
 
-  /* Glass theme — gradient bg, solid surfaces */
-  --xp-bg: transparent;
-  --xp-bg-gradient: linear-gradient(
-    135deg,
-    #0a0a1a 0%,
-    #0f0f2e 25%,
-    #1a0a2e 50%,
-    #0a1a2e 75%,
-    #0a0a1a 100%
-  );
-  --xp-surface: #111122;
-  --xp-surface-light: #161630;
+  /* Solid dark — no gradient, clean surfaces */
+  --xp-bg: #1a1a2e;
+  --xp-bg-gradient: none;
+  --xp-surface: #1e1e32;
+  --xp-surface-light: #252542;
   --xp-blue: #6366f1;
   --xp-blue-dark: #4f46e5;
   --xp-purple: #a78bfa;
@@ -75,11 +68,11 @@ body {
 
 /* Theme Classes */
 .theme-glass {
-  --background: transparent;
+  --background: #1a1a2e;
   --foreground: rgba(255, 255, 255, 0.92);
   --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: rgba(255, 255, 255, 0.6);
-  --popover: rgba(15, 15, 35, 0.85);
+  --popover: #22223a;
   --popover-foreground: rgba(255, 255, 255, 0.92);
   --card: rgba(255, 255, 255, 0.06);
   --card-foreground: rgba(255, 255, 255, 0.92);
@@ -95,17 +88,10 @@ body {
   --destructive-foreground: #ffffff;
   --ring: #6366f1;
 
-  --xp-bg: transparent;
-  --xp-bg-gradient: linear-gradient(
-    135deg,
-    #0a0a1a 0%,
-    #0f0f2e 25%,
-    #1a0a2e 50%,
-    #0a1a2e 75%,
-    #0a0a1a 100%
-  );
-  --xp-surface: #111122;
-  --xp-surface-light: #161630;
+  --xp-bg: #1a1a2e;
+  --xp-bg-gradient: none;
+  --xp-surface: #1e1e32;
+  --xp-surface-light: #252542;
   --xp-blue: #6366f1;
   --xp-blue-dark: #4f46e5;
   --xp-purple: #a78bfa;
@@ -314,21 +300,12 @@ html.enhanced-focus *:focus-visible {
 
 /* Gradient background on the html element itself (Windows/Linux fallback) */
 html.theme-glass {
-  background: linear-gradient(
-    135deg,
-    #0a0a1a 0%,
-    #0f0f2e 25%,
-    #1a0a2e 50%,
-    #0a1a2e 75%,
-    #0a0a1a 100%
-  );
-  background-attachment: fixed;
+  background: #1a1a2e;
   min-height: 100vh;
 }
 
-/* Body gets the gradient background */
 .theme-glass body {
-  background: transparent !important;
+  background: #1a1a2e !important;
 }
 
 /* ── Surface panels ──────────────────────────────────────────── */

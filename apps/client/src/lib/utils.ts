@@ -591,7 +591,7 @@ export const loadFontSize = () => {
     | 'large'
     | 'xl'
     | null;
-  applyFontSize(saved || 'medium');
+  applyFontSize(saved || 'small');
 };
 
 // ── Custom Theme support ─────────────────────────────────────────────────────
