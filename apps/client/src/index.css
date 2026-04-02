@@ -25,7 +25,7 @@ body {
   --card-foreground: rgba(255, 255, 255, 0.92);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.1);
-  --primary: #6366f1;
+  --primary: #11aee8;
   --primary-foreground: #ffffff;
   --secondary: rgba(255, 255, 255, 0.06);
   --secondary-foreground: rgba(255, 255, 255, 0.92);
@@ -33,7 +33,7 @@ body {
   --accent-foreground: rgba(255, 255, 255, 0.92);
   --destructive: #f87171;
   --destructive-foreground: #ffffff;
-  --ring: #6366f1;
+  --ring: #11aee8;
   --radius: 0.5rem;
 
   /* Solid dark — no gradient, clean surfaces */
@@ -41,8 +41,8 @@ body {
   --xp-bg-gradient: none;
   --xp-surface: #1e1e32;
   --xp-surface-light: #252542;
-  --xp-blue: #6366f1;
-  --xp-blue-dark: #4f46e5;
+  --xp-blue: #11aee8;
+  --xp-blue-dark: #0d8ec0;
   --xp-purple: #a78bfa;
   --xp-pink: #f472b6;
   --xp-green: #34d399;
@@ -59,11 +59,11 @@ body {
   /* Opaque popover/dropdown bg */
   --xp-popover: #1a1b2e;
 
-  /* Glow Effects */
-  --glow-blue: 0 0 8px rgba(99, 102, 241, 0.3);
-  --glow-purple: 0 0 8px rgba(167, 139, 250, 0.3);
-  --glow-pink: 0 0 8px rgba(244, 114, 182, 0.3);
-  --glow-green: 0 0 8px rgba(52, 211, 153, 0.3);
+  /* Glow Effects — disabled for clean look */
+  --glow-blue: none;
+  --glow-purple: none;
+  --glow-pink: none;
+  --glow-green: none;
 }
 
 /* Theme Classes */
@@ -78,7 +78,7 @@ body {
   --card-foreground: rgba(255, 255, 255, 0.92);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.1);
-  --primary: #6366f1;
+  --primary: #11aee8;
   --primary-foreground: #ffffff;
   --secondary: rgba(255, 255, 255, 0.06);
   --secondary-foreground: rgba(255, 255, 255, 0.92);
@@ -86,14 +86,14 @@ body {
   --accent-foreground: rgba(255, 255, 255, 0.92);
   --destructive: #f87171;
   --destructive-foreground: #ffffff;
-  --ring: #6366f1;
+  --ring: #11aee8;
 
   --xp-bg: #1a1a2e;
   --xp-bg-gradient: none;
   --xp-surface: #1e1e32;
   --xp-surface-light: #252542;
-  --xp-blue: #6366f1;
-  --xp-blue-dark: #4f46e5;
+  --xp-blue: #11aee8;
+  --xp-blue-dark: #0d8ec0;
   --xp-purple: #a78bfa;
   --xp-pink: #f472b6;
   --xp-green: #34d399;
@@ -108,10 +108,10 @@ body {
   --xp-border-light: rgba(255, 255, 255, 0.12);
   --xp-popover: #1a1b2e;
 
-  --glow-blue: 0 0 8px rgba(99, 102, 241, 0.3);
-  --glow-purple: 0 0 8px rgba(167, 139, 250, 0.3);
-  --glow-pink: 0 0 8px rgba(244, 114, 182, 0.3);
-  --glow-green: 0 0 8px rgba(52, 211, 153, 0.3);
+  --glow-blue: none;
+  --glow-purple: none;
+  --glow-pink: none;
+  --glow-green: none;
 }
 
 /* Additional themes available via marketplace extensions:
