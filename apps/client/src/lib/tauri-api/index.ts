@@ -7,8 +7,6 @@
 import * as fileSystem from './file-system';
 import * as search from './search';
 import * as git from './git';
-import * as extensions from './extensions';
-import * as ai from './ai';
 import * as storage from './storage';
 import * as system from './system';
 import * as pty from './pty';
@@ -20,8 +18,6 @@ export * from '../tauri-api-types';
 export * from './file-system';
 export * from './search';
 export * from './git';
-export * from './extensions';
-export * from './ai';
 export * from './storage';
 export * from './system';
 export * from './pty';
@@ -140,14 +136,8 @@ export class TauriAPI {
   static indexDirectory = search.indexDirectory;
   static setSearchContext = search.setSearchContext;
   static addWhitelistedPath = search.addWhitelistedPath;
-  static aiSearch = search.aiSearch;
   static parseSearchQuery = search.parseSearchQuery;
   static enhancedSearch = search.enhancedSearch;
-  static getAIIndexStatus = search.getAIIndexStatus;
-  static triggerAIIndexing = search.triggerAIIndexing;
-  static getAIIndexEntry = search.getAIIndexEntry;
-  static semanticSearch = search.semanticSearch;
-  static findSimilarFiles = search.findSimilarFiles;
 
   // ── Git ─────────────────────────────────────────────────────────────────
   static findGitRepository = git.findGitRepository;
@@ -171,45 +161,6 @@ export class TauriAPI {
   static dropStash = git.dropStash;
   static getGitStatus = git.getGitStatus;
   static getGitRepoInfo = git.getGitRepoInfo;
-
-  // ── Extensions ──────────────────────────────────────────────────────────
-  static getExtensionStorage = extensions.getExtensionStorage;
-  static setExtensionStorage = extensions.setExtensionStorage;
-  static deleteExtensionStorage = extensions.deleteExtensionStorage;
-  static getInstalledExtensions = extensions.getInstalledExtensions;
-  static installExtensionFromPath = extensions.installExtensionFromPath;
-  static uninstallExtensionById = extensions.uninstallExtensionById;
-  static activateExtension = extensions.activateExtension;
-  static deactivateExtension = extensions.deactivateExtension;
-  static getActiveExtensionIds = extensions.getActiveExtensionIds;
-  static getExtensionPermissions = extensions.getExtensionPermissions;
-  static validateExtensionPath = extensions.validateExtensionPath;
-  static downloadAndInstallExtension = extensions.downloadAndInstallExtension;
-  static packExtension = extensions.packExtension;
-  static installXtensionFile = extensions.installXtensionFile;
-  static inspectXtensionFile = extensions.inspectXtensionFile;
-  static nativePluginInvoke = extensions.nativePluginInvoke;
-  static extensionBackendCall = extensions.extensionBackendCall;
-  static extensionBackendStatus = extensions.extensionBackendStatus;
-  static checkForExtensionUpdates = extensions.checkForExtensionUpdates;
-  static downloadExtensionUpdate = extensions.downloadExtensionUpdate;
-
-  // ── AI ──────────────────────────────────────────────────────────────────
-  static getAiModels = ai.getAiModels;
-  static checkOllamaStatus = ai.checkOllamaStatus;
-  static chatWithAI = ai.chatWithAI;
-  static analyzeFileWithAI = ai.analyzeFileWithAI;
-  static getFileHelp = ai.getFileHelp;
-  static suggestFilename = ai.suggestFilename;
-  static autoTagFiles = ai.autoTagFiles;
-  static agentReadFileTree = ai.agentReadFileTree;
-  static agentRequestWritePermission = ai.agentRequestWritePermission;
-  static agentWriteFileWithPermission = ai.agentWriteFileWithPermission;
-  static agentRespondApproval = ai.agentRespondApproval;
-  static agentCancelSession = ai.agentCancelSession;
-  static getAgentSettings = ai.getAgentSettings;
-  static updateAgentSettings = ai.updateAgentSettings;
-  static updateAgentApiKeys = ai.updateAgentApiKeys;
 
   // ── Storage ─────────────────────────────────────────────────────────────
   static getBookmarks = storage.getBookmarks;
@@ -245,16 +196,6 @@ export class TauriAPI {
   static getFileMetadata = storage.getFileMetadata;
   static setFileMetadata = storage.setFileMetadata;
   static getAllMetadataKeys = storage.getAllMetadataKeys;
-  static getChatSessions = storage.getChatSessions;
-  static getChatSession = storage.getChatSession;
-  static saveChatSession = storage.saveChatSession;
-  static deleteChatSession = storage.deleteChatSession;
-  static clearChatHistory = storage.clearChatHistory;
-  static getChatsDirectory = storage.getChatsDirectory;
-  static createChatFile = storage.createChatFile;
-  static readChatFile = storage.readChatFile;
-  static saveChatFile = storage.saveChatFile;
-  static getChatFileSummary = storage.getChatFileSummary;
   static listSqliteTables = storage.listSqliteTables;
   static getSqliteTableColumns = storage.getSqliteTableColumns;
   static querySqliteTable = storage.querySqliteTable;
@@ -293,8 +234,6 @@ export class TauriAPI {
   static getShortcutSettings = system.getShortcutSettings;
   static updateShortcutSettings = system.updateShortcutSettings;
   static executeShortcutAction = system.executeShortcutAction;
-  static registerExtensionShortcut = system.registerExtensionShortcut;
-  static unregisterExtensionShortcuts = system.unregisterExtensionShortcuts;
   static registerGlobalShortcuts = system.registerGlobalShortcuts;
   static unregisterGlobalShortcuts = system.unregisterGlobalShortcuts;
   static toggleGlobalShortcuts = system.toggleGlobalShortcuts;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Lazy-loaded sub-panels -- only loaded when the user switches to their tab
 const XTermPanel = React.lazy(() => import('./XTermPanel'));
@@ -13,7 +13,6 @@ import { useNotificationHistory } from '@/hooks/use-notification-history';
 import type { ClipboardEntry } from '@/hooks/use-clipboard-history';
 import type { FileChangeSet } from '@/hooks/use-focus-change-tracker';
 import type { BottomPanelTabId } from '@/hooks/use-layout-state';
-import { extensionHost } from '@/lib/extension-host';
 
 type BottomPanelTab = BottomPanelTabId;
 
@@ -88,24 +87,6 @@ const BottomPanel = ({
   const { unreadCount } = useNotificationHistory();
   const [activityLogFilter, setActivityLogFilter] = useState<ActivityLogFilter>('all');
 
-  // Collect extension-registered bottom tabs, re-evaluate when extensions change
-  const [extRefreshKey, setExtRefreshKey] = useState(0);
-  useEffect(() => {
-    const unsubscribe = extensionHost.onChange(() => {
-      setExtRefreshKey((k) => k + 1);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const extensionBottomTabs = useMemo(() => {
-    try {
-      return extensionHost.getBottomTabs();
-    } catch {
-      return [];
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extRefreshKey]);
-
   // Listen for xplorer-set-bottom-tab events (dispatched by extensions/commands)
   useEffect(() => {
     const handler = (e: Event) => {
@@ -120,17 +101,11 @@ const BottomPanel = ({
 
   if (bottomPanelCollapsed) return null;
 
-  // Check if the active tab is an extension tab
-  const isExtensionTab = !CORE_TABS.includes(bottomPanelTab);
-
   const getTabLabel = (tab: BottomPanelTab): string => {
     if (tab === 'activity-log') return 'ACTIVITY LOG';
     if (tab === 'properties' && propertiesFilePath) {
       return `PROPERTIES: ${propertiesFilePath.replace(/^.*[\\/]/, '')}`;
     }
-    // Extension tab label
-    const extTab = extensionBottomTabs.find((bt) => bt.id === tab);
-    if (extTab) return extTab.title;
     return tab.toUpperCase();
   };
 
@@ -170,26 +145,6 @@ const BottomPanel = ({
           </button>
         ))}
 
-        {/* Extension-provided bottom tabs */}
-        {extensionBottomTabs.map((extTab) => (
-          <button
-            key={extTab.id}
-            role="tab"
-            aria-selected={bottomPanelTab === extTab.id}
-            aria-controls={`bottom-panel-${extTab.id}`}
-            id={`bottom-tab-${extTab.id}`}
-            onClick={() => setBottomPanelTab(extTab.id as BottomPanelTab)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${
-              bottomPanelTab === extTab.id
-                ? 'bg-xp-bg border-xp-blue text-xp-blue border-b-2'
-                : 'hover:bg-xp-surface-light'
-            }`}
-          >
-            {extTab.icon && <span className="h-3.5 w-3.5">{extTab.icon}</span>}
-            {extTab.title}
-          </button>
-        ))}
-
         <button
           onClick={() => setBottomPanelCollapsed(true)}
           className="hover:bg-xp-surface-light ml-auto px-2"
@@ -214,80 +169,67 @@ const BottomPanel = ({
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <ErrorBoundary>
-          {!isExtensionTab && (
-            <React.Suspense
-              fallback={
-                <div className="text-xp-text-muted flex h-full items-center justify-center text-xs">
-                  Loading...
-                </div>
-              }
-            >
-              {bottomPanelTab === 'terminal' && (
-                <XTermPanel cwd={terminalCwd} collapsed={bottomPanelCollapsed} />
-              )}
+          <React.Suspense
+            fallback={
+              <div className="text-xp-text-muted flex h-full items-center justify-center text-xs">
+                Loading...
+              </div>
+            }
+          >
+            {bottomPanelTab === 'terminal' && (
+              <XTermPanel cwd={terminalCwd} collapsed={bottomPanelCollapsed} />
+            )}
 
-              {bottomPanelTab === 'activity-log' && (
-                <ActivityLogContent
-                  activityLogFilter={activityLogFilter}
-                  setActivityLogFilter={setActivityLogFilter}
-                  outputMessages={outputMessages}
-                  files={files}
-                  currentPath={currentPath}
-                  themes={themes}
-                  theme={theme}
-                  terminalCwd={terminalCwd}
-                  selectedFiles={selectedFiles}
-                  selectedFile={selectedFile}
+            {bottomPanelTab === 'activity-log' && (
+              <ActivityLogContent
+                activityLogFilter={activityLogFilter}
+                setActivityLogFilter={setActivityLogFilter}
+                outputMessages={outputMessages}
+                files={files}
+                currentPath={currentPath}
+                themes={themes}
+                theme={theme}
+                terminalCwd={terminalCwd}
+                selectedFiles={selectedFiles}
+                selectedFile={selectedFile}
+                onNavigate={onNavigate}
+              />
+            )}
+
+            {bottomPanelTab === 'clipboard' && onPasteFromHistory && (
+              <ClipboardHistoryPanel onPaste={onPasteFromHistory} />
+            )}
+
+            {bottomPanelTab === 'notifications' && <NotificationCenter />}
+
+            {bottomPanelTab === 'changes' &&
+              (fileChanges && fileChanges.totalCount > 0 ? (
+                <ChangeReviewPanel
+                  changes={fileChanges}
+                  onDismiss={onDismissChanges ?? (() => {})}
                   onNavigate={onNavigate}
                 />
-              )}
+              ) : (
+                <div className="text-xp-text-muted flex h-full items-center justify-center text-xs">
+                  <svg
+                    className="mr-2 h-4 w-4 text-green-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  No external file changes detected
+                </div>
+              ))}
 
-              {bottomPanelTab === 'clipboard' && onPasteFromHistory && (
-                <ClipboardHistoryPanel onPaste={onPasteFromHistory} />
-              )}
-
-              {bottomPanelTab === 'notifications' && <NotificationCenter />}
-
-              {bottomPanelTab === 'changes' &&
-                (fileChanges && fileChanges.totalCount > 0 ? (
-                  <ChangeReviewPanel
-                    changes={fileChanges}
-                    onDismiss={onDismissChanges ?? (() => {})}
-                    onNavigate={onNavigate}
-                  />
-                ) : (
-                  <div className="text-xp-text-muted flex h-full items-center justify-center text-xs">
-                    <svg
-                      className="mr-2 h-4 w-4 text-green-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    No external file changes detected
-                  </div>
-                ))}
-
-              {bottomPanelTab === 'properties' && (
-                <PropertiesPanel filePath={propertiesFilePath ?? ''} />
-              )}
-            </React.Suspense>
-          )}
-
-          {/* Extension tab: sole flex child gets all available height */}
-          {isExtensionTab && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              {(() => {
-                const renderer = extensionHost.getBottomTabRenderer(bottomPanelTab);
-                if (!renderer) return null;
-                return renderer({ currentPath, isActive: true });
-              })()}
-            </div>
-          )}
+            {bottomPanelTab === 'properties' && (
+              <PropertiesPanel filePath={propertiesFilePath ?? ''} />
+            )}
+          </React.Suspense>
         </ErrorBoundary>
       </div>
     </div>

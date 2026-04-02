@@ -4,7 +4,6 @@ import { FileEntry, TauriAPI } from '@/lib/tauri-api';
 import { ContextMenuItem } from '@/components/ui/ContextMenu';
 import { PATH_SEPARATOR } from '@/lib/constants';
 import { isEditableFile } from '@/lib/editable-files';
-import { extensionHost } from '@/lib/extension-host';
 import { getRecentEntries, type ClipboardEntry } from '@/hooks/use-clipboard-history';
 import type { SortField } from '@/lib/utils';
 import { shouldShowMenuItem } from '@/lib/context-menu-rules';
@@ -791,24 +790,6 @@ export class ContextMenuFactory {
       });
     }
 
-    // Add actions from extension host
-    const extensionItems = extensionHost.getContextMenuItems({
-      file,
-      selectedFiles: selectedFiles || [],
-    });
-    if (extensionItems.length > 0) {
-      items.push({ id: 'sep-extensions', label: '', separator: true });
-      for (const extItem of extensionItems) {
-        items.push({
-          id: extItem.id,
-          label: extItem.label,
-          icon: extItem.icon,
-          action: () => extItem.action(file, selectedFiles),
-        });
-      }
-    }
-
-    // Add custom actions from extensions
     if (this.config.customActions && this.config.customActions.length > 0) {
       items.push({ id: 'sep-custom', label: '', separator: true });
       items.push(...this.config.customActions);
@@ -966,21 +947,6 @@ export class ContextMenuFactory {
         action: () => this.actions.openTemplatePicker(currentPath),
       },
     ];
-
-    // Add "New Chat" option — available in any folder
-    newSubmenu.push({
-      id: 'new-chat',
-      label: i18n.t('contextMenu.chat'),
-      icon: mi(MessageSquare),
-      action: async () => {
-        try {
-          await TauriAPI.createChatFile(currentPath);
-          this.actions.refresh();
-        } catch (error) {
-          console.error('Failed to create chat file:', error);
-        }
-      },
-    });
 
     items.push({
       id: 'new',

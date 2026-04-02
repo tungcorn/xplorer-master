@@ -7,7 +7,12 @@ import React, {
   forwardRef,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TauriAPI, SearchResult, SearchMatch, StructuredQuery } from '@/lib/tauri-api';
+import {
+  TauriAPI,
+  type SearchResult,
+  type SearchMatch,
+  type StructuredQuery,
+} from '@/lib/tauri-api';
 import { useToast } from '@/hooks/use-toast';
 import { getSavedSearches, saveSearch, type SavedSearch } from '@/lib/saved-searches';
 import {
@@ -56,11 +61,8 @@ import {
   Music,
   Package,
   File as FileIcon,
-  ChevronDown,
   Star,
 } from 'lucide-react';
-
-export type SearchProvider = 'local' | 'claude' | 'openai' | 'ollama';
 
 interface SmartSearchProps {
   className?: string;
@@ -128,13 +130,6 @@ const FILTER_INDICATORS = [
   'zips',
 ];
 
-const PROVIDER_LABELS: Record<SearchProvider, string> = {
-  local: 'Local',
-  claude: 'Claude',
-  openai: 'GPT',
-  ollama: 'Ollama',
-};
-
 const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
   (
     {
@@ -154,9 +149,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [showResults, setShowResults] = useState(false);
     const [parsedQuery, setParsedQuery] = useState<StructuredQuery | null>(null);
-    const [searchProvider, setSearchProvider] = useState<SearchProvider>('local');
-    const [showProviderMenu, setShowProviderMenu] = useState(false);
-    const providerMenuRef = useRef<HTMLDivElement>(null);
     const [searchContent, setSearchContent] = useState(false);
     const [searchScope, setSearchScope] = useState<SearchScope>(loadSearchScope);
     const [tokenChips, setTokenChips] = useState<TokenChip[]>([]);
@@ -167,17 +159,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
     const resultsRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const { toast } = useToast();
-
-    useEffect(() => {
-      if (!showProviderMenu) return;
-      const onMouseDown = (e: MouseEvent) => {
-        if (providerMenuRef.current && !providerMenuRef.current.contains(e.target as Node)) {
-          setShowProviderMenu(false);
-        }
-      };
-      document.addEventListener('mousedown', onMouseDown);
-      return () => document.removeEventListener('mousedown', onMouseDown);
-    }, [showProviderMenu]);
 
     // Keep saved searches in sync with localStorage changes
     useEffect(() => {
@@ -270,82 +251,49 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
 
           try {
             let searchResults: SearchResult[] = [];
+            const queryForIndex = effectiveQuery || searchQuery;
 
-            if (searchProvider !== 'local') {
-              // AI-powered search: BM25F pre-filter → AI re-rank
-              try {
-                const aiResult = await TauriAPI.aiSearch(
-                  effectiveQuery || searchQuery,
-                  searchProvider,
-                  undefined, // API key from env/settings
-                  undefined, // model default
+            try {
+              if (shouldUseEnhancedSearch(queryForIndex)) {
+                const enhanced = await TauriAPI.enhancedSearch(
+                  queryForIndex,
+                  undefined,
                   maxResults,
                 );
-                searchResults = aiResult.results;
-              } catch (err) {
-                // AI search failed, fall through to local
-                console.warn('AI search failed, falling back to local:', err);
-                toast({
-                  title: 'AI Search Unavailable',
-                  description: `${PROVIDER_LABELS[searchProvider]} search failed. Using local search.`,
-                  variant: 'destructive',
-                });
+                if (!controller.signal.aborted) {
+                  setParsedQuery(enhanced.parsed_query);
+                  searchResults = enhanced.results;
+                }
+              } else {
+                const tokenResults = await TauriAPI.searchTokens(queryForIndex, maxResults);
+                if (!controller.signal.aborted) {
+                  setParsedQuery(null);
+                  searchResults = tokenResults;
+                }
+              }
+            } catch {
+              if (!controller.signal.aborted) {
+                setParsedQuery(null);
               }
             }
 
-            // Local search (or AI fallback)
-            if (searchResults.length === 0) {
-              const queryForIndex = effectiveQuery || searchQuery;
-              // Always try indexed search first (BM25F scored)
+            if (searchResults.length === 0 && !controller.signal.aborted && resolvedSearchPath) {
               try {
-                if (shouldUseEnhancedSearch(queryForIndex)) {
-                  const enhanced = await TauriAPI.enhancedSearch(
-                    queryForIndex,
-                    undefined,
-                    maxResults,
-                  );
-                  if (!controller.signal.aborted) {
-                    setParsedQuery(enhanced.parsed_query);
-                    searchResults = enhanced.results;
-                  }
-                } else {
-                  const tokenResults = await TauriAPI.searchTokens(queryForIndex, maxResults);
-                  if (!controller.signal.aborted) {
-                    setParsedQuery(null);
-                    searchResults = tokenResults;
-                  }
+                const paths = await TauriAPI.findFiles(queryForIndex, resolvedSearchPath);
+                if (!controller.signal.aborted) {
+                  searchResults = paths.slice(0, maxResults).map((path) => {
+                    const filename = path.split(/[/\\]/).pop() || path;
+                    return {
+                      path,
+                      filename,
+                      matches: [{ token: queryForIndex, context: 'Filename match' }],
+                      score: computeFilesystemScore(filename, queryForIndex),
+                      relevance_type: 'exact',
+                    };
+                  });
                 }
               } catch {
-                // Index search failed — not a problem, we'll fall back
-                if (!controller.signal.aborted) setParsedQuery(null);
-              }
-
-              // If index returned nothing, fall back to filesystem search
-              if (searchResults.length === 0 && !controller.signal.aborted) {
-                if (resolvedSearchPath) {
-                  try {
-                    const paths = await TauriAPI.findFiles(
-                      effectiveQuery || searchQuery,
-                      resolvedSearchPath,
-                    );
-                    if (!controller.signal.aborted) {
-                      searchResults = paths.slice(0, maxResults).map((p) => {
-                        const filename = p.split(/[/\\]/).pop() || p;
-                        return {
-                          path: p,
-                          filename,
-                          matches: [
-                            { token: effectiveQuery || searchQuery, context: 'Filename match' },
-                          ],
-                          score: computeFilesystemScore(filename, effectiveQuery || searchQuery),
-                          relevance_type: 'exact',
-                        } as SearchResult;
-                      });
-                    }
-                  } catch {
-                    // Filesystem search also failed
-                  }
-                }
+                searchResults = [];
               }
             }
 
@@ -393,7 +341,7 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
             }
           }
         }, SEARCH_DEBOUNCE_MS),
-      [maxResults, searchProvider, currentPath, searchContent, searchScope, toast],
+      [maxResults, currentPath, searchContent, searchScope],
     );
 
     useEffect(() => {
@@ -440,21 +388,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
       onFileSelect?.(result.path, !hasExt);
     };
 
-    const handleFindSimilar = async (e: React.MouseEvent, filePath: string) => {
-      e.stopPropagation();
-      try {
-        const similarResults = await TauriAPI.findSimilarFiles(filePath, maxResults);
-        setResults(similarResults);
-        setParsedQuery(null);
-      } catch {
-        toast({
-          title: 'Find Similar Failed',
-          description: 'Semantic search requires Ollama with an embedding model.',
-          variant: 'destructive',
-        });
-      }
-    };
-
     const handleFocus = () => {
       if (results.length > 0) setShowResults(true);
     };
@@ -464,7 +397,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
         if (!resultsRef.current?.contains(e.relatedTarget as Node)) {
           setShowResults(false);
           setSelectedIndex(-1);
-          setShowProviderMenu(false);
         }
       }, DROPDOWN_BLUR_DELAY_MS);
     };
@@ -654,47 +586,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
             className="absolute right-2 top-1/2 flex -translate-y-1/2 transform items-center gap-1"
             onMouseDown={(e) => e.preventDefault()}
           >
-            {/* Provider selector */}
-            <div className="relative" ref={providerMenuRef}>
-              <button
-                onClick={() => setShowProviderMenu(!showProviderMenu)}
-                className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs transition-colors ${
-                  searchProvider !== 'local'
-                    ? 'border border-purple-500 border-opacity-30 bg-purple-500 bg-opacity-20 text-purple-400'
-                    : 'text-xp-text-muted hover:text-xp-text'
-                }`}
-                title={`Search provider: ${PROVIDER_LABELS[searchProvider]}`}
-              >
-                {PROVIDER_LABELS[searchProvider]}
-                <ChevronDown size={10} />
-              </button>
-
-              {showProviderMenu && (
-                <>
-                  <div
-                    className="bg-xp-popover border-xp-border absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded border shadow-xl"
-                    onMouseDown={(e) => e.preventDefault()}
-                  >
-                    {(Object.keys(PROVIDER_LABELS) as SearchProvider[]).map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => {
-                          setSearchProvider(p);
-                          setShowProviderMenu(false);
-                        }}
-                        className={`hover:bg-xp-surface-light w-full px-3 py-1.5 text-left text-xs transition-colors ${
-                          searchProvider === p ? 'bg-xp-blue text-xp-blue bg-opacity-20' : ''
-                        }`}
-                      >
-                        {PROVIDER_LABELS[p]}
-                        {p === 'local' && <span className="text-xp-text-muted ml-1">(BM25F)</span>}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* Scope toggle: This Folder / Everywhere */}
             {currentPath && !currentPath.startsWith('xplorer://') && (
               <button
@@ -913,13 +804,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
                         )}
                       </div>
                     )}
-                    <button
-                      onClick={(e) => handleFindSimilar(e, result.path)}
-                      className="mt-1 text-xs text-indigo-400 transition-colors hover:text-indigo-300"
-                      title="Find semantically similar files"
-                    >
-                      Find Similar
-                    </button>
                   </div>
                 </div>
               </button>
@@ -928,7 +812,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
             <div className="bg-xp-bg border-xp-border text-xp-text-muted border-t p-3 text-center text-xs">
               Found {results.length} results
               {results.length >= maxResults && ` (showing first ${maxResults})`}
-              {searchProvider !== 'local' && ` via ${PROVIDER_LABELS[searchProvider]}`}
               {parsedQuery?.sort_hint === 'size_desc' && ' · Sorted by size (largest first)'}
               {parsedQuery?.sort_hint === 'size_asc' && ' · Sorted by size (smallest first)'}
               {parsedQuery?.sort_hint === 'date_desc' && ' · Sorted by date (newest first)'}
@@ -956,17 +839,6 @@ const SmartSearch = forwardRef<SmartSearchHandle, SmartSearchProps>(
               <p className="text-xp-text-muted mt-1 text-xs">
                 Try different keywords or navigate to the target folder first
               </p>
-              {searchProvider === 'local' && (
-                <button
-                  onClick={() => {
-                    setSearchProvider('claude');
-                    debouncedSearch(query);
-                  }}
-                  className="mt-2 text-xs text-purple-400 hover:text-purple-300"
-                >
-                  Try AI-powered search with Claude
-                </button>
-              )}
             </div>
           </div>
         )}

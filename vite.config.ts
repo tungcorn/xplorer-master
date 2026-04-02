@@ -14,13 +14,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, 'apps', 'client', 'src'),
       '@xplorer/sdk': path.resolve(import.meta.dirname, 'packages', 'sdk', 'src', 'index.ts'),
-      '@xplorer/extension-sdk': path.resolve(
-        import.meta.dirname,
-        'packages',
-        'extension-sdk',
-        'src',
-        'index.ts',
-      ),
     },
   },
   root: path.resolve(import.meta.dirname, 'apps', 'client'),

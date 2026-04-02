@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TauriAPI, type RecentFile } from '@/lib/tauri-api';
-import { AgentService, type AgentEvent, type AgentToolCall } from '@/lib/agent-service';
-import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { formatFileSize, applyTheme } from '@/lib/utils';
 import { isWindows, ROOT_PATH, PATH_SEPARATOR, CLOCK_UPDATE_INTERVAL_MS } from '@/lib/constants';
 import { useAllThemes } from '@/lib/theme-registry';
@@ -124,7 +122,7 @@ const _TerminalIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   </svg>
 );
 
-const SparklesIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+const _SparklesIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path
       fillRule="evenodd"
@@ -267,7 +265,12 @@ const Clock = () => {
   }, []);
 
   const hour = currentTime.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  let greeting = 'Good evening';
+  if (hour < 12) {
+    greeting = 'Good morning';
+  } else if (hour < 17) {
+    greeting = 'Good afternoon';
+  }
 
   return (
     <div className="flex items-end justify-between">
@@ -354,126 +357,6 @@ const HomePage = ({ onNavigate, theme: _theme, setTheme }: HomePageProps) => {
       if (parentDir) {
         handleNavigate(parentDir);
       }
-    }
-  };
-
-  // AI Assistant state
-  const [aiInput, setAiInput] = useState('');
-  const [aiMessages, setAiMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string }>
-  >([]);
-  const [aiStreaming, setAiStreaming] = useState('');
-  const [aiRunning, setAiRunning] = useState(false);
-  const [aiToolCalls, setAiToolCalls] = useState<
-    Array<{ id: string; name: string; status: string }>
-  >([]);
-  const [aiPendingApprovals, setAiPendingApprovals] = useState<AgentToolCall[]>([]);
-  const aiScrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollAiToBottom = () => {
-    if (aiScrollRef.current) {
-      aiScrollRef.current.scrollTop = aiScrollRef.current.scrollHeight;
-    }
-  };
-
-  useEffect(scrollAiToBottom, [aiMessages, aiStreaming, aiToolCalls]);
-
-  const handleAiSend = async () => {
-    const msg = aiInput.trim();
-    if (!msg || aiRunning) return;
-    setAiInput('');
-
-    const userMsg = { role: 'user' as const, content: msg };
-    setAiMessages((prev) => [...prev, userMsg]);
-    setAiRunning(true);
-    setAiStreaming('');
-    setAiToolCalls([]);
-    setAiPendingApprovals([]);
-
-    let streamBuf = '';
-    const conversationForApi = [...aiMessages, userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-
-    try {
-      await AgentService.startAgentChat(
-        conversationForApi,
-        userDirectories?.home || ROOT_PATH,
-        (event: AgentEvent) => {
-          switch (event.event_type) {
-            case 'text':
-            case 'text_delta':
-              if (event.text) {
-                streamBuf += event.text;
-                setAiStreaming(streamBuf);
-              }
-              break;
-            case 'tool_call':
-              if (event.tool_call) {
-                setAiToolCalls((prev) => [
-                  ...prev,
-                  {
-                    id: event.tool_call!.id,
-                    name: event.tool_call!.name,
-                    status: event.tool_call!.status,
-                  },
-                ]);
-              }
-              break;
-            case 'approval_request':
-              if (event.tool_call) {
-                setAiPendingApprovals((prev) => [...prev, event.tool_call!]);
-              }
-              break;
-            case 'tool_result':
-              if (event.tool_call) {
-                setAiToolCalls((prev) =>
-                  prev.map((tc) =>
-                    tc.id === event.tool_call!.id ? { ...tc, status: event.tool_call!.status } : tc,
-                  ),
-                );
-                setAiPendingApprovals((prev) => prev.filter((tc) => tc.id !== event.tool_call!.id));
-              }
-              break;
-            case 'complete':
-              if (streamBuf) {
-                setAiMessages((prev) => [...prev, { role: 'assistant', content: streamBuf }]);
-                setAiStreaming('');
-                streamBuf = '';
-              }
-              setAiRunning(false);
-              setAiToolCalls([]);
-              break;
-            case 'error':
-              if (streamBuf) {
-                setAiMessages((prev) => [...prev, { role: 'assistant', content: streamBuf }]);
-              }
-              setAiMessages((prev) => [
-                ...prev,
-                { role: 'assistant', content: `Error: ${event.text || 'Unknown error'}` },
-              ]);
-              setAiStreaming('');
-              setAiRunning(false);
-              break;
-          }
-        },
-      );
-    } catch (err) {
-      setAiMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: `Failed to start agent: ${err}` },
-      ]);
-      setAiRunning(false);
-    }
-  };
-
-  const handleApproval = async (toolCallId: string, response: string) => {
-    try {
-      await AgentService.respondToApproval(toolCallId, response);
-      setAiPendingApprovals((prev) => prev.filter((tc) => tc.id !== toolCallId));
-    } catch (err) {
-      console.error('Approval failed:', err);
     }
   };
 
@@ -731,187 +614,6 @@ const HomePage = ({ onNavigate, theme: _theme, setTheme }: HomePageProps) => {
             </div>
           </div>
         )}
-
-        {/* AI Assistant - takes remaining space */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="bg-xp-surface/50 border-xp-border flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-            {/* Chat messages area */}
-            <div ref={aiScrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 pb-2 pt-4">
-              {aiMessages.length === 0 && !aiStreaming && (
-                <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
-                    <SparklesIcon className="h-6 w-6 text-white" />
-                  </div>
-                  <p className="text-xp-text mb-1 text-sm">Xplorer Agent</p>
-                  <p className="text-xp-text-muted max-w-xs text-xs">
-                    Ask me to organize files, find documents, run commands, or manage your
-                    workspace.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                {aiMessages.map((msg, i) => (
-                  <div
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={i}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm ${
-                        msg.role === 'user'
-                          ? 'bg-xp-blue/20 text-xp-text'
-                          : 'bg-xp-bg/60 text-xp-text'
-                      }`}
-                    >
-                      {msg.role === 'user' ? (
-                        <span>{msg.content}</span>
-                      ) : (
-                        <MarkdownRenderer content={msg.content} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Streaming response */}
-                {aiStreaming && (
-                  <div className="flex justify-start">
-                    <div className="bg-xp-bg/60 text-xp-text max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm">
-                      <MarkdownRenderer content={aiStreaming} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Tool calls */}
-                {aiToolCalls.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {aiToolCalls.map((tc) => {
-                      let dotClass = 'animate-pulse bg-blue-400';
-                      if (tc.status === 'completed') {
-                        dotClass = 'bg-green-400';
-                      } else if (tc.status === 'error' || tc.status === 'denied') {
-                        dotClass = 'bg-red-400';
-                      }
-                      return (
-                        <span
-                          key={tc.id}
-                          className="bg-xp-bg/60 border-xp-border text-xp-text-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs"
-                        >
-                          <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dotClass}`} />
-                          {tc.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Approval requests */}
-                {aiPendingApprovals.map((tc) => {
-                  let approvalDetail: string;
-                  if (tc.name === 'execute_command') {
-                    approvalDetail = String((tc.input as Record<string, unknown>)?.command || '');
-                  } else if (tc.name === 'write_file' || tc.name === 'delete') {
-                    approvalDetail = String((tc.input as Record<string, unknown>)?.path || '');
-                  } else {
-                    approvalDetail = JSON.stringify(tc.input).slice(0, 80);
-                  }
-                  return (
-                    <div
-                      key={tc.id}
-                      className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-3"
-                    >
-                      <p className="mb-1.5 text-xs font-medium text-yellow-400">
-                        Approve: {tc.name}
-                      </p>
-                      <p className="text-xp-text-muted mb-2 truncate font-mono text-xs">
-                        {approvalDetail}
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleApproval(tc.id, 'allow_once')}
-                          className="rounded bg-green-600 px-3 py-1 text-xs text-white transition-colors hover:bg-green-500"
-                        >
-                          This Time
-                        </button>
-                        <button
-                          onClick={() => handleApproval(tc.id, 'allow_always')}
-                          className="bg-xp-blue rounded px-3 py-1 text-xs text-white transition-colors hover:opacity-80"
-                        >
-                          Always
-                        </button>
-                        <button
-                          onClick={() => handleApproval(tc.id, 'deny_always')}
-                          className="bg-xp-surface border-xp-border text-xp-text hover:bg-xp-bg rounded border px-3 py-1 text-xs transition-colors"
-                        >
-                          Never
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Input area - pinned at bottom */}
-            <div className="border-xp-border flex-shrink-0 border-t p-4">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleAiSend();
-                      }
-                    }}
-                    placeholder="Ask anything..."
-                    disabled={aiRunning}
-                    className="bg-xp-bg/60 border-xp-border text-xp-text placeholder-xp-text-muted focus:border-xp-blue/50 focus:ring-xp-blue/30 w-full rounded-lg border py-2.5 pl-4 pr-20 text-sm transition-colors focus:outline-none focus:ring-1 disabled:opacity-50"
-                  />
-                  <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-                    {aiRunning ? (
-                      <button
-                        onClick={() => AgentService.cancelSession()}
-                        className="bg-xp-error/20 text-xp-error hover:bg-xp-error/30 rounded-md px-2.5 py-1 text-xs transition-colors"
-                      >
-                        Stop
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleAiSend}
-                        disabled={!aiInput.trim()}
-                        className="bg-xp-blue/20 text-xp-blue hover:bg-xp-blue/30 rounded-md px-2.5 py-1 text-xs transition-colors disabled:opacity-30"
-                      >
-                        Send
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {aiMessages.length === 0 && (
-                <div className="mt-2.5 flex gap-2">
-                  {[
-                    'List my recent files',
-                    'Organize my Downloads',
-                    'What large files do I have?',
-                  ].map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => {
-                        setAiInput(suggestion);
-                      }}
-                      className="bg-xp-bg/40 border-xp-border text-xp-text-muted hover:text-xp-text hover:border-xp-text-muted rounded-md border px-2.5 py-1 text-xs transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

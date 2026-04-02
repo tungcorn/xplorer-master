@@ -1,11 +1,7 @@
 packages:
   - 'apps/client'
-  - 'apps/web'
   - 'packages/sdk'
-  - 'packages/extension-sdk'
-  - 'packages/create-extension'
   - 'packages/cli'
-  - 'packages/extensions/**'
 
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'

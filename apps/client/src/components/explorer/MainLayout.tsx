@@ -25,7 +25,6 @@ import type { ConflictResolution } from '@/components/dialogs/FileConflictDialog
 
 import TopBar, { TopBarHandle } from '@/components/explorer/TopBar';
 import LeftSidebar, { type LeftSidebarHandle } from '@/components/explorer/LeftSidebar';
-import VerticalExtensionsBar from '@/components/explorer/VerticalExtensionsBar';
 import RightSidebar from '@/components/panels/RightSidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import BottomPanel from '@/components/panels/BottomPanel';
@@ -71,8 +70,10 @@ export interface MainLayoutProps {
   setRightSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   bottomPanelCollapsed: boolean;
   setBottomPanelCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-  extensionsBarCollapsed: boolean;
-  setExtensionsBarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  /** @deprecated Extensions removed — kept for API compat */
+  extensionsBarCollapsed?: boolean;
+  /** @deprecated Extensions removed — kept for API compat */
+  setExtensionsBarCollapsed?: React.Dispatch<React.SetStateAction<boolean>>;
   leftSidebarWidth: number;
   rightSidebarWidth: number;
   bottomPanelHeight: number;
@@ -226,7 +227,7 @@ const MainLayout = (props: MainLayoutProps) => {
     setRightSidebarCollapsed,
     bottomPanelCollapsed,
     setBottomPanelCollapsed,
-    extensionsBarCollapsed,
+    extensionsBarCollapsed: _extensionsBarCollapsed,
     setExtensionsBarCollapsed: _setExtensionsBarCollapsed,
     leftSidebarWidth,
     rightSidebarWidth,
@@ -235,7 +236,7 @@ const MainLayout = (props: MainLayoutProps) => {
     handleRightResize,
     handleBottomResize,
     rightPanelTab,
-    setRightPanelTab,
+    setRightPanelTab: _setRightPanelTab,
     bottomPanelTab,
     setBottomPanelTab,
     searchPanelOpen,
@@ -514,17 +515,6 @@ const MainLayout = (props: MainLayoutProps) => {
                 />
               )}
             </div>
-
-            {/* Vertical Extensions Bar */}
-            {!extensionsBarCollapsed && (
-              <VerticalExtensionsBar
-                data-tour="extensions-bar"
-                rightPanelTab={rightPanelTab}
-                setRightPanelTab={setRightPanelTab}
-                rightSidebarCollapsed={rightSidebarCollapsed}
-                setRightSidebarCollapsed={setRightSidebarCollapsed}
-              />
-            )}
 
             {/* Right Sidebar */}
             {!rightSidebarCollapsed && (

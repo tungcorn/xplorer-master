@@ -64,7 +64,7 @@ import {
   CalendarDays,
   Tags,
   ClipboardCopy,
-  // Additional icons for extension marketplace
+  // Additional icons
   AlertTriangle,
   Archive,
   Box,
@@ -179,8 +179,6 @@ export const getFileIcon = (fileEntry: FileEntry): React.ReactNode => {
     case 'bat':
     case 'cmd':
       return icon(Zap, 'text-xp-yellow');
-    case 'chat':
-      return icon(MessageSquare, 'text-xp-purple');
     default:
       return icon(FileIcon, 'text-xp-text-muted');
   }

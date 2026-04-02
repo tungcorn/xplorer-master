@@ -3,7 +3,6 @@ import { TauriAPI, type FileEntry, type ConflictFileInfo } from '@/lib/tauri-api
 import { PATH_SEPARATOR, detectSep } from '@/lib/constants';
 import { showConfirmationToast, showInputToast } from '@/components/ui/Toast';
 import type { BatchOperationType } from '@/components/dialogs/BatchConfirmDialog';
-import { invertSelection } from '@/extensions/advanced-selection/selection-utils';
 import { ContextMenuFactory, type ContextMenuAction } from '@/lib/context-menu-factory';
 import type { TabItem } from '@/types/split-view';
 import type { ClipboardEntry } from '@/hooks/use-clipboard-history';
@@ -23,6 +22,10 @@ import type { SortField } from '@/lib/utils';
 
 export type { ClipboardState };
 export { formatError };
+
+const invertSelection = (allFiles: FileEntry[], activeSelection: Set<string>): string[] => {
+  return allFiles.map((file) => file.path).filter((path) => !activeSelection.has(path));
+};
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,7 +1,5 @@
 import React, { useRef, useState, useMemo, useLayoutEffect, useEffect, useCallback } from 'react';
-import ExtensionPanelHost from './ExtensionPanelHost';
 import PreviewNavigationBar from './PreviewNavigationBar';
-import { extensionHost } from '@/lib/extension-host';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FileEntry, FolderSizeInfo } from '@/lib/tauri-api';
 import { usePreviewHistory } from '@/hooks/use-preview-history';
@@ -9,8 +7,6 @@ import { usePreviewHistory } from '@/hooks/use-preview-history';
 // Lazy-loaded panels -- only loaded when the user switches to their tab
 const PreviewPanel = React.lazy(() => import('./PreviewPanel'));
 const TokenizerStatusPanel = React.lazy(() => import('./TokenizerStatusPanel'));
-const ExtensionsPanel = React.lazy(() => import('./ExtensionsPanel'));
-const MarketplacePanel = React.lazy(() => import('./MarketplacePanel'));
 const PerformanceDashboard = React.lazy(() => import('./PerformanceDashboard'));
 const ComparePreview = React.lazy(() => import('@/components/previews/ComparePreview'));
 
@@ -49,9 +45,6 @@ const RightSidebar = ({
   selectedFile,
   formatFileSize,
   formatDate,
-  themes,
-  theme,
-  applyTheme,
   allFiles,
   selectedFiles,
   getFolderSize,
@@ -241,30 +234,6 @@ const RightSidebar = ({
   // Show scrubber navigation bar?
   const showScrubber = isPreviewTab && multiSelected && !showCompare;
 
-  // Props bag passed to extension panels (for any extension that uses PanelRenderProps)
-  // Convert selectedFiles Set<string> to the array format extensions expect
-  const extensionSelectedFiles = selectedFiles
-    ? allFiles
-        .filter((f) => selectedFiles.has(f.path))
-        .map((f) => ({
-          name: f.name,
-          path: f.path,
-          is_dir: f.is_dir,
-        }))
-    : undefined;
-
-  const extensionProps = {
-    selectedFile: showScrubber ? effectivePreviewFile : selectedFile,
-    formatFileSize,
-    formatDate,
-    allFiles,
-    selectedFiles: extensionSelectedFiles,
-    getFolderSize,
-    isCalculatingSize,
-    currentPath,
-    navigateToPath,
-  };
-
   // Get panel title for header
   const getTabTitle = () => {
     if (showCompare) return 'Compare Files';
@@ -272,10 +241,6 @@ const RightSidebar = ({
     if (rightPanelTab === 'preview') return 'File Preview';
     if (rightPanelTab === 'tokenizer') return 'Content Search';
     if (rightPanelTab === 'performance') return 'Performance';
-    if (rightPanelTab === 'extensions') return 'Extensions';
-    if (rightPanelTab === 'marketplace') return 'Marketplace';
-    const panel = extensionHost.getPanel(rightPanelTab);
-    if (panel) return panel.title;
     return rightPanelTab;
   };
 
@@ -409,25 +374,7 @@ const RightSidebar = ({
                   </ErrorBoundary>
                 );
               }
-              if (rightPanelTab === 'extensions') {
-                return (
-                  <ErrorBoundary>
-                    <ExtensionsPanel themes={themes} theme={theme} applyTheme={applyTheme} />
-                  </ErrorBoundary>
-                );
-              }
-              if (rightPanelTab === 'marketplace') {
-                return (
-                  <ErrorBoundary>
-                    <MarketplacePanel />
-                  </ErrorBoundary>
-                );
-              }
-              return (
-                <ErrorBoundary>
-                  <ExtensionPanelHost panelId={rightPanelTab} builtinProps={extensionProps} />
-                </ErrorBoundary>
-              );
+              return null;
             })()}
           </React.Suspense>
         </div>

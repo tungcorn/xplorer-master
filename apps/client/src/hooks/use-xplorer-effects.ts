@@ -1,16 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWindowEvent } from '@/hooks/use-window-event';
 import { TauriAPI, type FileEntry } from '@/lib/tauri-api';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { PATH_SEPARATOR } from '@/lib/constants';
 import { showInputToast } from '@/components/ui/Toast';
-import { invertSelection } from '@/extensions/advanced-selection/selection-utils';
 import {
   getBookmarkBySlot,
   setPathBookmark as assignPathBookmark,
   getFolderName,
 } from '@/lib/path-bookmarks';
-import { extensionHost } from '@/lib/extension-host';
 import { startTour, isTourCompleted } from '@/hooks/use-tour';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 import { useVimMode, isVimModeEnabled, type VimModeActions } from '@/hooks/use-vim-mode';
@@ -296,7 +294,7 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
       },
       onInvertSelection: () => {
         if (files) {
-          const inverted = invertSelection(files, selectedFiles);
+          const inverted = files.map((f) => f.path).filter((p) => !selectedFiles.has(p));
           setSelectedFiles(new Set(inverted));
         }
       },
@@ -578,24 +576,20 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
     return () => document.removeEventListener('keydown', handleBookmarkKeys, true);
   }, [currentPath, toast, navigateWithHistory, setPathBookmarksDialogOpen]);
 
-  // ── Initialize extension system (deferred — open folder first) ───────────
+  // ── Sync currentPath to app state ──────────────────────────────────────
   useEffect(() => {
-    // Defer extension loading so the folder renders immediately.
-    // Extensions load after the first paint + a short idle period.
-    const timer = setTimeout(() => extensionHost.loadInstalledExtensions(), 300);
     (window as unknown as WindowWithXplorer).__xplorer_state__ = {
       currentPath: '',
       selectedFiles: [] as Array<{ name: string; path: string; is_dir: boolean }>,
       navigateTo: (path: string) => navigateToPathRef.current(path),
     };
     return () => {
-      clearTimeout(timer);
       delete (window as unknown as WindowWithXplorer).__xplorer_state__;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Sync currentPath to extension state ───────────────────────────────────
+  // ── Sync currentPath to app state ──────────────────────────────────────
   useEffect(() => {
     const state = (window as unknown as WindowWithXplorer).__xplorer_state__;
     if (state) {
@@ -616,7 +610,7 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
     }
   }, []);
 
-  // ── Sync selectedFiles to extension state ─────────────────────────────────
+  // ── Sync selectedFiles to app state ────────────────────────────────────
   useEffect(() => {
     const state = (window as unknown as WindowWithXplorer).__xplorer_state__;
     if (state) {
@@ -841,18 +835,7 @@ export const useXplorerEffects = (deps: XplorerEffectsDeps) => {
     handleDelete: fileOps.handleDelete,
   });
 
-  // Merge extension commands into the palette
-  const [extCommandVersion, setExtCommandVersion] = useState(0);
-  useEffect(() => {
-    const sub = extensionHost.onCommandsChanged(() => setExtCommandVersion((v) => v + 1));
-    return () => sub.dispose();
-  }, []);
-
-  const commandPaletteCommands = useMemo(() => {
-    void extCommandVersion; // trigger re-compute when extension commands change
-    const extCommands = extensionHost.getCommandPaletteEntries();
-    return extCommands.length > 0 ? [...builtinCommands, ...extCommands] : builtinCommands;
-  }, [builtinCommands, extCommandVersion]);
+  const commandPaletteCommands = builtinCommands;
 
   return {
     vimState,

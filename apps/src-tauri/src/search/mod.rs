@@ -2,7 +2,6 @@
 // Modular search pipeline: stemming, BM25F, FST fuzzy, bitmap filters,
 // incremental indexing, hybrid retrieval, multi-signal reranking.
 
-pub mod ai_pipeline;
 pub mod bitmap_filters;
 pub mod bm25f;
 pub mod compat;
@@ -11,7 +10,6 @@ pub mod fst_index;
 pub mod fuzzy;
 pub mod hybrid;
 pub mod index;
-pub mod ollama_client;
 pub mod query_parser;
 pub mod reranker;
 pub mod stemmer;

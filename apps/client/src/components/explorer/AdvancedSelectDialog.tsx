@@ -7,23 +7,13 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import {
-  selectByExtension,
-  selectByDateRange,
-  selectBySizeRange,
-  selectByPattern,
-  invertSelection,
-  getUniqueExtensions,
-  countByExtension,
-} from '@/extensions/advanced-selection/selection-utils';
-import { COMMON_FILE_TYPES, DATE_RANGE_PRESETS } from '@/extensions/advanced-selection/types';
-
-// ----- Types -----
 
 type SelectionMode = 'select' | 'deselect' | 'invert';
 type PatternMode = 'glob' | 'regex';
 type SizeUnit = 'KB' | 'MB' | 'GB';
 type HiddenFileMode = 'include' | 'only' | 'exclude';
+type CommonFileType = { label: string; extensions: string[] };
+type DateRangePreset = { label: string; getRange: () => { from: Date; to: Date } };
 
 const SIZE_UNIT_BYTES: Record<SizeUnit, number> = {
   KB: 1024,
@@ -31,7 +21,145 @@ const SIZE_UNIT_BYTES: Record<SizeUnit, number> = {
   GB: 1024 * 1024 * 1024,
 };
 
-// ----- Props -----
+const startOfDay = (date: Date): Date => {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+};
+
+const endOfDay = (date: Date): Date => {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
+};
+
+const getFileExtension = (file: FileEntry): string => {
+  const parts = file.name.split('.');
+  if (parts.length < 2) return '';
+  return parts.pop()?.toLowerCase() ?? '';
+};
+
+const globToRegExp = (pattern: string): RegExp => {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const regexPattern = `^${escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.')}$`;
+  return new RegExp(regexPattern, 'i');
+};
+
+const selectByExtension = (files: FileEntry[], extensions: string[]): string[] => {
+  const extensionSet = new Set(extensions.map((extension) => extension.toLowerCase()));
+  return files
+    .filter((file) => !file.is_dir && extensionSet.has(getFileExtension(file)))
+    .map((file) => file.path);
+};
+
+const selectByDateRange = (files: FileEntry[], from?: Date, to?: Date): string[] => {
+  return files
+    .filter((file) => {
+      if (!file.modified) return false;
+      const modifiedAt = new Date(file.modified * 1000);
+      if (Number.isNaN(modifiedAt.getTime())) return false;
+      if (from && modifiedAt < from) return false;
+      if (to && modifiedAt > to) return false;
+      return true;
+    })
+    .map((file) => file.path);
+};
+
+const selectBySizeRange = (files: FileEntry[], minBytes?: number, maxBytes?: number): string[] => {
+  return files
+    .filter((file) => {
+      if (file.is_dir) return false;
+      if (minBytes !== undefined && file.size < minBytes) return false;
+      if (maxBytes !== undefined && file.size > maxBytes) return false;
+      return true;
+    })
+    .map((file) => file.path);
+};
+
+const selectByPattern = (files: FileEntry[], pattern: string): string[] => {
+  try {
+    const regex = globToRegExp(pattern.trim());
+    return files.filter((file) => regex.test(file.name)).map((file) => file.path);
+  } catch {
+    return [];
+  }
+};
+
+const invertSelection = (files: FileEntry[], currentSelection: Set<string>): string[] => {
+  return files.map((file) => file.path).filter((path) => !currentSelection.has(path));
+};
+
+const _getUniqueExtensions = (files: FileEntry[]): string[] => {
+  return Array.from(
+    new Set(
+      files.map((file) => getFileExtension(file)).filter((extension) => extension.length > 0),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+};
+
+const countByExtension = (files: FileEntry[]): Map<string, number> => {
+  const counts = new Map<string, number>();
+  for (const file of files) {
+    if (file.is_dir) continue;
+    const extension = getFileExtension(file);
+    if (!extension) continue;
+    counts.set(extension, (counts.get(extension) ?? 0) + 1);
+  }
+  return counts;
+};
+
+const COMMON_FILE_TYPES: CommonFileType[] = [
+  { label: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'] },
+  { label: 'Videos', extensions: ['mp4', 'mov', 'avi', 'mkv', 'webm'] },
+  { label: 'Audio', extensions: ['mp3', 'wav', 'flac', 'aac', 'ogg'] },
+  { label: 'Documents', extensions: ['pdf', 'doc', 'docx', 'txt', 'md', 'rtf'] },
+  { label: 'Code', extensions: ['js', 'ts', 'tsx', 'jsx', 'json', 'html', 'css', 'rs', 'py'] },
+  { label: 'Archives', extensions: ['zip', 'rar', '7z', 'tar', 'gz'] },
+];
+
+const DATE_RANGE_PRESETS: DateRangePreset[] = [
+  {
+    label: 'Today',
+    getRange: () => {
+      const now = new Date();
+      return { from: startOfDay(now), to: endOfDay(now) };
+    },
+  },
+  {
+    label: 'Yesterday',
+    getRange: () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 1);
+      return { from: startOfDay(date), to: endOfDay(date) };
+    },
+  },
+  {
+    label: 'Last 7 days',
+    getRange: () => {
+      const now = new Date();
+      const from = new Date(now);
+      from.setDate(from.getDate() - 6);
+      return { from: startOfDay(from), to: endOfDay(now) };
+    },
+  },
+  {
+    label: 'Last 30 days',
+    getRange: () => {
+      const now = new Date();
+      const from = new Date(now);
+      from.setDate(from.getDate() - 29);
+      return { from: startOfDay(from), to: endOfDay(now) };
+    },
+  },
+  {
+    label: 'This year',
+    getRange: () => {
+      const now = new Date();
+      const from = new Date(now.getFullYear(), 0, 1);
+      return { from: startOfDay(from), to: endOfDay(now) };
+    },
+  },
+];
 
 interface AdvancedSelectDialogProps {
   isOpen: boolean;
@@ -45,8 +173,6 @@ interface AdvancedSelectDialogProps {
     variant?: 'default' | 'destructive';
   }) => void;
 }
-
-// ----- Component -----
 
 const AdvancedSelectDialog = ({
   isOpen,
@@ -87,8 +213,6 @@ const AdvancedSelectDialog = ({
   // Hidden files filter state
   const [hiddenFileMode, setHiddenFileMode] = useState<HiddenFileMode>('include');
 
-  // Directory info
-  const _availableExtensions = useMemo(() => getUniqueExtensions(files), [files]);
   const extensionCounts = useMemo(() => countByExtension(files), [files]);
 
   // Reset state when dialog opens
@@ -685,7 +809,10 @@ const intersect = (a: Set<string>, b: Set<string>): Set<string> => {
 };
 
 const formatDateForInput = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export default AdvancedSelectDialog;

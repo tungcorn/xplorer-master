@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import {
-  TauriAPI,
-  type FileEntry,
-  type AuditEntry,
-  type AIIndexStatus,
-  type TokenIndex,
-} from '@/lib/tauri-api';
+import { TauriAPI, type FileEntry, type AuditEntry, type TokenIndex } from '@/lib/tauri-api';
 
 export interface DirectoryStats {
   fileCount: number;
@@ -15,10 +9,6 @@ export interface DirectoryStats {
 }
 
 export interface IndexingStatus {
-  aiIndexed: number;
-  aiQueueLength: number;
-  isAiProcessing: boolean;
-  currentAiFile?: string;
   tokenTotalFiles: number;
   tokenTotalTokens: number;
   tokenLastUpdated: number;
@@ -53,9 +43,6 @@ export const usePerformanceStats = (
 ): PerformanceStats => {
   const [recentOps, setRecentOps] = useState<AuditEntry[]>([]);
   const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>({
-    aiIndexed: 0,
-    aiQueueLength: 0,
-    isAiProcessing: false,
     tokenTotalFiles: 0,
     tokenTotalTokens: 0,
     tokenLastUpdated: 0,
@@ -87,14 +74,14 @@ export const usePerformanceStats = (
     setIsLoading(true);
     try {
       // Fetch all async data in parallel
-      const [auditResult, aiStatus, tokenizerStats, tokenizerIndexing, trashItems] =
-        await Promise.allSettled([
+      const [auditResult, tokenizerStats, tokenizerIndexing, trashItems] = await Promise.allSettled(
+        [
           TauriAPI.getAuditLog(10, 0),
-          TauriAPI.getAIIndexStatus(),
           TauriAPI.getTokenizerStats(),
           TauriAPI.isTokenizerIndexing(),
           TauriAPI.getTrashItems(),
-        ]);
+        ],
+      );
 
       // Audit log
       if (auditResult.status === 'fulfilled') {
@@ -112,17 +99,12 @@ export const usePerformanceStats = (
       }
 
       // Indexing status
-      const ai: AIIndexStatus | null = aiStatus.status === 'fulfilled' ? aiStatus.value : null;
       const tok: TokenIndex | null =
         tokenizerStats.status === 'fulfilled' ? tokenizerStats.value : null;
       const tokIsIndexing =
         tokenizerIndexing.status === 'fulfilled' ? tokenizerIndexing.value : false;
 
       setIndexingStatus({
-        aiIndexed: ai?.total_indexed ?? 0,
-        aiQueueLength: ai?.queue_length ?? 0,
-        isAiProcessing: ai?.is_processing ?? false,
-        currentAiFile: ai?.current_file,
         tokenTotalFiles: tok?.total_files ?? 0,
         tokenTotalTokens: tok?.total_tokens ?? 0,
         tokenLastUpdated: tok?.last_updated ?? 0,

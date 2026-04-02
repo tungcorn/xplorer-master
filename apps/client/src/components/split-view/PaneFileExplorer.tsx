@@ -46,7 +46,6 @@ interface PaneFileExplorerProps {
   calculateFolderSize: (path: string) => void;
   setBottomPanelCollapsed: (collapsed: boolean) => void;
   setBottomPanelTab: (tab: string) => void;
-  onAdvancedSelection: () => void;
   onQuickLook?: (file: import('@/lib/tauri-api').FileEntry) => void;
   /** Inline rename handler: called with (oldPath, newName), returns true on success */
   onRenameFile?: (oldPath: string, newName: string) => Promise<boolean>;
@@ -88,7 +87,6 @@ const PaneFileExplorer = React.memo(
     calculateFolderSize,
     setBottomPanelCollapsed,
     setBottomPanelTab,
-    onAdvancedSelection,
     onQuickLook,
     onRenameFile,
     onCreateFile,
@@ -191,7 +189,6 @@ const PaneFileExplorer = React.memo(
               return next;
             });
           }}
-          onAdvancedSelection={onAdvancedSelection}
           showSizeBadges={showSizeBadges}
           onToggleSizeBadges={toggleSizeBadges}
           onCreateFile={onCreateFile}

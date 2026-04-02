@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileEntry, TauriAPI, FolderSizeInfo } from '@/lib/tauri-api';
+import { FileEntry, FolderSizeInfo } from '@/lib/tauri-api';
 import { getFileIcon } from '@/lib/utils';
 import { defaultPreviewFactory, PreviewProps, PreviewType } from '@/lib/preview-factory';
-import { extensionHost } from '@/lib/extension-host';
 import { PreviewSkeleton } from '@/components/ui/Skeleton';
 import PreviewActionBar from './PreviewActionBar';
 
@@ -29,9 +28,6 @@ const EnhancedFilePreview: React.FC<{
 }> = ({ file, category: _category, currentPath }) => {
   const [PreviewComponent, setPreviewComponent] =
     useState<React.ComponentType<PreviewProps> | null>(null);
-  const [extensionPreviewElement, setExtensionPreviewElement] = useState<React.ReactElement | null>(
-    null,
-  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,72 +38,6 @@ const EnhancedFilePreview: React.FC<{
       try {
         setLoading(true);
         setError(null);
-        setExtensionPreviewElement(null);
-
-        // Check extension previews first (extension > built-in > fallback)
-        const extPreview = extensionHost.queryPreview({
-          name: file.name,
-          path: file.path,
-          is_dir: file.is_dir,
-          size: file.size,
-        });
-
-        if (extPreview) {
-          // Try to load text content for text-like files
-          let fileContent: string | null = null;
-          const textExts = [
-            'txt',
-            'log',
-            'ini',
-            'cfg',
-            'conf',
-            'md',
-            'json',
-            'csv',
-            'xml',
-            'yaml',
-            'yml',
-            'toml',
-            'js',
-            'ts',
-            'jsx',
-            'tsx',
-            'py',
-            'java',
-            'cpp',
-            'c',
-            'cs',
-            'php',
-            'rb',
-            'go',
-            'rs',
-            'html',
-            'css',
-            'scss',
-          ];
-          const ext = file.name.split('.').pop()?.toLowerCase() || '';
-          if (textExts.includes(ext) && file.size < 2 * 1024 * 1024) {
-            try {
-              fileContent = await TauriAPI.readTextFile(file.path);
-            } catch {
-              // Not a text file or read failed; pass null
-            }
-          }
-
-          if (!cancelled) {
-            const element = extPreview.render({
-              filePath: file.path,
-              fileContent,
-              currentPath,
-              selectedFiles: [
-                { name: file.name, path: file.path, is_dir: file.is_dir, size: file.size },
-              ],
-            });
-            setExtensionPreviewElement(element);
-            setLoading(false);
-          }
-          return;
-        }
 
         // Fall back to built-in preview factory
         if (!defaultPreviewFactory.canPreview(file)) {
@@ -195,11 +125,6 @@ const EnhancedFilePreview: React.FC<{
         </div>
       </div>
     );
-  }
-
-  // Extension preview takes priority over built-in previews
-  if (extensionPreviewElement) {
-    return extensionPreviewElement;
   }
 
   if (PreviewComponent) {

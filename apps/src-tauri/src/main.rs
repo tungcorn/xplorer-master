@@ -6,11 +6,8 @@ use tracing::warn;
 
 // All modules are declared in lib.rs (the `xplorer` library crate).
 // Import them here so the binary can register Tauri commands.
-use xplorer::agent;
-use xplorer::ai;
 use xplorer::api;
 use xplorer::duplicate_finder;
-use xplorer::extensions;
 use xplorer::file_organizer;
 use xplorer::file_watcher;
 use xplorer::git_history;
@@ -53,81 +50,17 @@ fn main() {
             // Initialize shortcuts manager
             shortcuts::init_shortcuts_manager("shortcuts");
 
-            // Initialize extension manager using app data directory
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .unwrap_or_else(|_| std::path::PathBuf::from("./data"));
-            std::fs::create_dir_all(&app_data_dir).unwrap_or_default();
-            let extensions_dir = app_data_dir.join("extensions");
-            std::fs::create_dir_all(&extensions_dir).unwrap_or_default();
-
-            // Migration: rename old-style seeded directories whose directory name
-            // differs from their manifest.id (e.g. "code-editor-extension" → "code-editor").
-            // If a correctly-named copy already exists, remove the old-named duplicate.
-            if let Ok(entries) = std::fs::read_dir(&extensions_dir) {
-                let mut actions: Vec<(std::path::PathBuf, String)> = Vec::new(); // (old_path, manifest_id)
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if !path.is_dir() {
-                        continue;
-                    }
-                    let dir_name = entry.file_name().to_string_lossy().to_string();
-                    let pkg_path = path.join("package.json");
-                    if let Ok(raw) = std::fs::read_to_string(&pkg_path) {
-                        if let Ok(pkg) = serde_json::from_str::<serde_json::Value>(&raw) {
-                            if let Some(id) = pkg
-                                .get("xplorer")
-                                .and_then(|x| x.get("id"))
-                                .and_then(|v| v.as_str())
-                            {
-                                if dir_name != id {
-                                    actions.push((path.clone(), id.to_string()));
-                                }
-                            }
-                        }
-                    }
-                }
-                for (old_path, manifest_id) in actions {
-                    let correct_path = extensions_dir.join(&manifest_id);
-                    if correct_path.exists() {
-                        // Correctly-named copy already exists — remove the misnamed duplicate
-                        let _ = std::fs::remove_dir_all(&old_path);
-                    } else {
-                        // Rename the misnamed directory to use manifest.id
-                        let _ = std::fs::rename(&old_path, &correct_path);
-                    }
-                }
-            }
-
-            extensions::init_extension_manager(app_data_dir.to_str().unwrap_or("./data"));
-
-            // Check CLI args for .xtension file association opens
+            // Check CLI args for folder path (opened via "Open with Xplorer" or set-as-default)
             let handle = app.handle().clone();
             let args: Vec<String> = std::env::args().collect();
-            for arg in &args[1..] {
-                if arg.ends_with(".xtension") && std::path::Path::new(arg).exists() {
-                    let xtension_path = arg.to_string();
-                    let handle_clone = handle.clone();
-                    // Emit event to frontend after window is ready
-                    tauri::async_runtime::spawn(async move {
-                        // Small delay to ensure the frontend is ready to listen
-                        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-                        let _ = handle_clone.emit("xtension-file-opened", &xtension_path);
-                    });
-                    break; // Only handle the first .xtension file
-                }
-            }
-
-            // Check CLI args for folder path (opened via "Open with Xplorer" or set-as-default)
             for arg in &args[1..] {
                 let path = std::path::Path::new(arg);
                 if path.is_dir() {
                     let folder_path = arg.to_string();
-                    let handle_clone2 = handle.clone();
+                    let handle_clone = handle.clone();
                     tauri::async_runtime::spawn(async move {
                         tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-                        let _ = handle_clone2.emit("folder-opened", &folder_path);
+                        let _ = handle_clone.emit("folder-opened", &folder_path);
                     });
                     break;
                 }
@@ -170,10 +103,6 @@ fn main() {
             operations::get_directory_size,
             operations::get_directory_item_count,
             operations::set_file_permissions,
-            // AI Agent operations
-            operations::agent_read_file_tree,
-            operations::agent_request_write_permission,
-            operations::agent_write_file_with_permission,
             operations::is_dir,
             operations::get_files_in_directory,
             operations::open_file,
@@ -193,22 +122,6 @@ fn main() {
             operations::list_drives,
             operations::eject_volume,
             operations::get_dir_size,
-            // AI operations
-            ai::get_ai_models,
-            ai::check_ollama_status,
-            ai::chat_with_ai,
-            ai::analyze_file_with_ai,
-            ai::get_file_help,
-            ai::calculate_folder_size,
-            ai::get_cached_folder_sizes,
-            ai::clear_folder_size_cache,
-            ai::get_user_directories,
-            ai::get_recent_folders,
-            ai::add_to_recent_folders,
-            ai::get_system_info,
-            // AI-powered rename & auto-tag
-            ai::suggest_filename,
-            ai::auto_tag_files,
             // Undo/Redo
             operations::undo_redo_ops::undo_operation,
             operations::undo_redo_ops::redo_operation,
@@ -235,18 +148,8 @@ fn main() {
             api::get_files_by_tag,
             api::update_file_tags,
             api::update_file_color,
-            api::get_extensions,
-            api::get_active_extensions,
-            api::create_extension,
-            api::install_extension,
-            api::uninstall_extension,
-            api::delete_extension,
-            api::get_chat_messages,
-            api::create_chat_message,
             api::get_user_settings,
             api::update_user_settings,
-            // Native plugin invoke (for extensions with native code)
-            extensions::native_plugin_invoke,
             // Search engine v2 (replaces old tokenizer commands)
             xplorer::search::compat::set_tokenizer_settings,
             xplorer::search::compat::get_tokenizer_settings,
@@ -264,15 +167,7 @@ fn main() {
             xplorer::search::compat::index_directory,
             xplorer::search::compat::set_search_context,
             xplorer::search::compat::add_whitelisted_path,
-            xplorer::search::compat::ai_search,
-            // AI indexing (new search engine v2 pipeline)
-            xplorer::search::compat::get_ai_index_status,
-            xplorer::search::compat::trigger_ai_indexing,
-            xplorer::search::compat::get_ai_index_entry,
-            // Semantic / hybrid search (new search engine v2 pipeline)
-            xplorer::search::compat::semantic_search,
-            xplorer::search::compat::find_similar_files,
-            xplorer::search::compat::hybrid_search,
+
             // Shortcut operations
             shortcuts::get_shortcuts,
             shortcuts::get_shortcuts_by_category,
@@ -284,8 +179,6 @@ fn main() {
             shortcuts::get_shortcut_settings,
             shortcuts::update_shortcut_settings,
             shortcuts::execute_shortcut_action,
-            shortcuts::register_extension_shortcut,
-            shortcuts::unregister_extension_shortcuts,
             shortcuts::register_global_shortcuts,
             shortcuts::unregister_global_shortcuts,
             shortcuts::toggle_global_shortcuts,
@@ -296,25 +189,6 @@ fn main() {
             duplicate_finder::cancel_duplicate_scan,
             duplicate_finder::delete_duplicate_files,
             duplicate_finder::move_duplicate_files_to_trash,
-            // Extension operations (from extensions module)
-            extensions::get_installed_extensions,
-            extensions::install_extension_from_path,
-            extensions::uninstall_extension_by_id,
-            extensions::activate_extension,
-            extensions::deactivate_extension,
-            extensions::get_extension_permissions,
-            extensions::get_active_extension_ids,
-            extensions::validate_extension_path,
-            extensions::download_and_install_extension,
-            extensions::check_for_extension_updates,
-            extensions::download_extension,
-            extensions::check_extension_updates,
-            extensions::pack_extension,
-            extensions::install_xtension_file,
-            extensions::inspect_xtension_file,
-            // WASM backend operations
-            extensions::extension_backend_call,
-            extensions::extension_backend_status,
             // Git history operations
             git_history::find_git_repository,
             git_history::get_repository_info,
@@ -355,20 +229,6 @@ fn main() {
             file_organizer::analyze_directory,
             file_organizer::preview_organization,
             file_organizer::execute_organization,
-            // Claude Agent operations
-            agent::agent_chat,
-            agent::agent_respond_approval,
-            agent::agent_cancel_session,
-            agent::get_agent_settings,
-            agent::update_agent_settings,
-            agent::update_agent_api_keys,
-            agent::agent_approve_plan,
-            agent::agent_get_plan,
-            agent::get_agent_memory,
-            agent::clear_agent_memory,
-            agent::delete_agent_memory,
-            agent::get_agent_permissions,
-            agent::update_agent_permissions,
             // Recent files operations
             storage::add_recent_file,
             storage::get_recent_files,
@@ -413,22 +273,6 @@ fn main() {
             storage::get_file_metadata,
             storage::set_file_metadata,
             storage::get_all_metadata_keys,
-            // Chat history operations
-            storage::get_chat_sessions,
-            storage::get_chat_session,
-            storage::save_chat_session,
-            storage::delete_chat_session,
-            storage::clear_chat_history,
-            // Extension-scoped storage operations
-            storage::get_extension_storage,
-            storage::set_extension_storage,
-            storage::delete_extension_storage,
-            // Chat-as-Files operations
-            storage::chat_files::get_chats_directory,
-            storage::chat_files::create_chat_file,
-            storage::chat_files::read_chat_file,
-            storage::chat_files::save_chat_file,
-            storage::chat_files::get_chat_file_summary,
             // Storage analytics operations
             operations::analyze_storage,
             // Directory diagnostics

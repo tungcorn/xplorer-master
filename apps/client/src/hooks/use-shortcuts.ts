@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { TauriAPI, ShortcutAction, ShortcutBinding } from '@/lib/tauri-api';
+import { TauriAPI, type ShortcutAction, type ShortcutBinding } from '@/lib/tauri-api';
 import { listenToEvent } from '@/lib/transport';
 import { getKeyString } from '@/lib/shortcut-utils';
 
@@ -52,13 +52,6 @@ export interface ShortcutHandlers {
 
   // Terminal
   onOpenTerminal?: () => void;
-
-  // Extension actions
-  onExtensionAction?: (
-    extensionId: string,
-    actionId: string,
-    params?: Record<string, string>,
-  ) => void;
 }
 
 // ── Module-level shortcut cache ───────────────────────────────────────────
@@ -235,10 +228,6 @@ export const useShortcuts = (handlers: ShortcutHandlers, context: string = 'file
         h.onOpenTerminal?.();
         break;
       default:
-        if (typeof action === 'object' && 'ExtensionAction' in action) {
-          const ea = action.ExtensionAction;
-          h.onExtensionAction?.(ea.extension_id, ea.action_id, ea.params);
-        }
         break;
     }
   }, []);

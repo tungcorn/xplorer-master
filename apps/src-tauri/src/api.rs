@@ -1,5 +1,5 @@
 // API commands module - handles all API routes from the old server
-use crate::storage::{Extension, FileRecord, StoredChatMessage, UserSettings, STORAGE};
+use crate::storage::{FileRecord, UserSettings, STORAGE};
 use tauri::command;
 
 // File API commands
@@ -70,68 +70,6 @@ pub async fn update_file_tags(id: i32, tags: Vec<String>) -> Result<Option<FileR
 pub async fn update_file_color(id: i32, color: String) -> Result<Option<FileRecord>, String> {
     let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
     Ok(storage.update_file_color(id, color).cloned())
-}
-
-// Extension API commands
-#[command]
-pub async fn get_extensions() -> Result<Vec<Extension>, String> {
-    let storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    let extensions = storage.get_extensions();
-    Ok(extensions.into_iter().cloned().collect())
-}
-
-#[command]
-pub async fn get_active_extensions() -> Result<Vec<Extension>, String> {
-    let storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    let extensions = storage.get_active_extensions();
-    Ok(extensions.into_iter().cloned().collect())
-}
-
-#[command]
-pub async fn create_extension(
-    name: String,
-    description: String,
-    version: String,
-    author: String,
-) -> Result<Extension, String> {
-    let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    Ok(storage.create_extension(name, description, version, author))
-}
-
-#[command]
-pub async fn install_extension(id: i32) -> Result<Option<Extension>, String> {
-    let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    Ok(storage.update_extension(id, true).cloned())
-}
-
-#[command]
-pub async fn uninstall_extension(id: i32) -> Result<Option<Extension>, String> {
-    let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    Ok(storage.update_extension(id, false).cloned())
-}
-
-#[command]
-pub async fn delete_extension(id: i32) -> Result<bool, String> {
-    let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    Ok(storage.delete_extension(id))
-}
-
-// Chat API commands
-#[command]
-pub async fn get_chat_messages(session_id: String) -> Result<Vec<StoredChatMessage>, String> {
-    let storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    let messages = storage.get_chat_messages(&session_id);
-    Ok(messages.into_iter().cloned().collect())
-}
-
-#[command]
-pub async fn create_chat_message(
-    session_id: String,
-    role: String,
-    content: String,
-) -> Result<StoredChatMessage, String> {
-    let mut storage = STORAGE.lock().unwrap_or_else(|e| e.into_inner());
-    Ok(storage.create_chat_message(session_id, role, content))
 }
 
 // User settings API commands

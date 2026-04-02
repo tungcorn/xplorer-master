@@ -2,9 +2,6 @@ import { transport } from '../transport';
 import type {
   SearchResult,
   EnhancedSearchResult,
-  AISearchResult,
-  AIIndexStatus,
-  AIIndexEntry,
   TokenIndex,
   FileToken,
   StructuredQuery,
@@ -77,23 +74,6 @@ export const setSearchContext = async (path: string): Promise<void> =>
 export const addWhitelistedPath = async (path: string): Promise<void> =>
   await transport('add_whitelisted_path', { path });
 
-// ── AI-powered search ───────────────────────────────────────────────────────
-
-export const aiSearch = async (
-  query: string,
-  provider: string,
-  apiKey?: string,
-  model?: string,
-  limit?: number,
-): Promise<AISearchResult> =>
-  await transport('ai_search', {
-    query,
-    provider,
-    apiKey: apiKey || null,
-    model: model || null,
-    limit: limit || null,
-  });
-
 // ── Structured / enhanced search ────────────────────────────────────────────
 
 export const parseSearchQuery = async (
@@ -112,32 +92,3 @@ export const enhancedSearch = async (
     language: language || null,
     limit: limit || null,
   });
-
-// ── AI Index ────────────────────────────────────────────────────────────────
-
-export const getAIIndexStatus = async (): Promise<AIIndexStatus> =>
-  await transport('get_ai_index_status');
-
-export const triggerAIIndexing = async (
-  paths: string[],
-  provider?: 'ollama' | 'claude' | 'openai',
-  apiKey?: string,
-  model?: string,
-): Promise<void> =>
-  await transport('trigger_ai_indexing', {
-    paths,
-    provider: provider || null,
-    apiKey: apiKey || null,
-    model: model || null,
-  });
-
-export const getAIIndexEntry = async (path: string): Promise<AIIndexEntry | null> =>
-  await transport('get_ai_index_entry', { path });
-
-// ── Semantic search ─────────────────────────────────────────────────────────
-
-export const semanticSearch = async (query: string, limit?: number): Promise<SearchResult[]> =>
-  await transport('semantic_search', { query, limit: limit || null });
-
-export const findSimilarFiles = async (filePath: string, limit?: number): Promise<SearchResult[]> =>
-  await transport('find_similar_files', { filePath, limit: limit || null });

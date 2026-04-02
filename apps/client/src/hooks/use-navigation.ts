@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { TauriAPI } from '@/lib/tauri-api';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
-import { extensionHost } from '@/lib/extension-host';
 import { PATH_SEPARATOR } from '@/lib/constants';
 import type { TabItem } from '@/types/split-view';
 
@@ -29,13 +28,14 @@ export const useNavigation = ({ currentPath, splitLayout, activeGroup }: UseNavi
       if (newPath === currentPath) return;
 
       const activeTabObj = activeGroup.tabs.find((t) => t.id === activeGroup.activeTabId);
-      const isExtensionTab = activeTabObj?.type
-        ? extensionHost.getTabRenderer(activeTabObj.type) !== null
-        : false;
+      const isGDriveTab =
+        activeTabObj?.type === 'gdrive' || activeTabObj?.type === 'gdrive-manager';
       const isLocalPath =
-        !extensionHost.isExtensionScheme(newPath) && !newPath.startsWith('xplorer://');
+        !newPath.startsWith('gdrive://') &&
+        !newPath.startsWith('xplorer://') &&
+        !newPath.startsWith('xplorer://gdrive-manager');
 
-      if (isExtensionTab && isLocalPath) {
+      if (isGDriveTab && isLocalPath) {
         const folderTab = activeGroup.tabs.find((t) => t.type === 'folder' || t.type === undefined);
         if (folderTab) {
           splitLayout.switchTab(activeGroup.id, folderTab.id);
@@ -64,7 +64,8 @@ export const useNavigation = ({ currentPath, splitLayout, activeGroup }: UseNavi
       if (
         !newPath.startsWith('xplorer://') &&
         !newPath.startsWith('comparison://') &&
-        !extensionHost.isExtensionScheme(newPath)
+        !newPath.startsWith('gdrive://') &&
+        !newPath.startsWith('collection://')
       ) {
         TauriAPI.indexDirectory(newPath).catch((err) =>
           console.error('Failed to index directory:', err),
@@ -88,7 +89,9 @@ export const useNavigation = ({ currentPath, splitLayout, activeGroup }: UseNavi
 
   const navigateUp = useCallback(() => {
     if (currentPath === 'xplorer://home') return;
-    if (extensionHost.isExtensionScheme(currentPath)) return;
+    if (currentPath === 'xplorer://gdrive-manager') return;
+    if (currentPath.startsWith('gdrive://')) return;
+    if (currentPath.startsWith('collection://')) return;
     if (currentPath.startsWith('/')) {
       const parts = currentPath.split('/').filter(Boolean);
       if (parts.length <= 1) return;

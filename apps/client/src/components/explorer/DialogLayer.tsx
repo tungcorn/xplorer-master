@@ -8,8 +8,6 @@ import {
 import type { FileDetailsTab } from '@/components/dialogs/FileDetailsDialog';
 import type { Toast } from '@/hooks/use-toast';
 import type { EncryptionMode } from '@/components/dialogs/EncryptionDialog';
-import { extensionHost } from '@/lib/extension-host';
-
 import type { BatchOperationType } from '@/components/dialogs/BatchConfirmDialog';
 
 // Lazy-loaded built-in dialogs (fallbacks when no extension is registered)
@@ -33,7 +31,6 @@ const CreateSymlinkDialog = React.lazy(() => import('@/components/dialogs/Create
 const PasteRenameDialog = React.lazy(() => import('@/components/dialogs/PasteRenameDialog'));
 const BatchMetadataDialog = React.lazy(() => import('@/components/dialogs/BatchMetadataDialog'));
 import AdvancedSelectDialog from '@/components/explorer/AdvancedSelectDialog';
-import { AdvancedSelectionExtension } from '@/extensions/advanced-selection';
 
 export interface DialogLayerProps {
   dialogManager: {
@@ -111,26 +108,6 @@ export interface DialogLayerProps {
   refetch: () => void;
 }
 
-/**
- * Helper: Render an extension-registered dialog if available, otherwise fall back to built-in.
- * Returns true if an extension dialog was rendered.
- */
-const ExtensionDialog = ({
-  dialogId,
-  isOpen,
-  onClose,
-  data,
-}: {
-  dialogId: string;
-  isOpen: boolean;
-  onClose: () => void;
-  data: Record<string, unknown>;
-}) => {
-  const renderer = extensionHost.getDialogRenderer(dialogId);
-  if (!renderer) return null;
-  return <ErrorBoundary>{renderer({ isOpen, onClose, data })}</ErrorBoundary>;
-};
-
 const DialogLayer = ({
   dialogManager,
   fileComparison,
@@ -141,129 +118,66 @@ const DialogLayer = ({
   toast,
   refetch,
 }: DialogLayerProps) => {
-  // Check which extension dialogs are registered
-  const hasCompareExt = extensionHost.hasDialog('compare-files-dialog');
-  const hasOpenWithExt = extensionHost.hasDialog('open-with-dialog');
-  const hasCompressExt = extensionHost.hasDialog('compress-dialog');
-  const hasBulkRenameExt = extensionHost.hasDialog('bulk-rename-dialog');
-  const hasTagsExt = extensionHost.hasDialog('file-tags-dialog');
-  const hasExtractExt = extensionHost.hasDialog('extract-dialog');
-
   return (
     <>
       {/* Compare Files Dialog */}
-      {hasCompareExt ? (
-        <ExtensionDialog
-          dialogId="compare-files-dialog"
-          isOpen={fileComparison.selectionDialogOpen}
-          onClose={fileComparison.closeSelectionDialog}
-          data={{
-            onCompare: dialogManager.handleComparisonFromDialog,
-            initialFile1: fileComparison.file1Path,
-            initialFile2: fileComparison.file2Path,
-          }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <CompareFilesDialog
-              isOpen={fileComparison.selectionDialogOpen}
-              onClose={fileComparison.closeSelectionDialog}
-              onCompare={dialogManager.handleComparisonFromDialog}
-              initialFile1={fileComparison.file1Path}
-              initialFile2={fileComparison.file2Path}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <CompareFilesDialog
+            isOpen={fileComparison.selectionDialogOpen}
+            onClose={fileComparison.closeSelectionDialog}
+            onCompare={dialogManager.handleComparisonFromDialog}
+            initialFile1={fileComparison.file1Path}
+            initialFile2={fileComparison.file2Path}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* Open With Dialog */}
-      {hasOpenWithExt ? (
-        <ExtensionDialog
-          dialogId="open-with-dialog"
-          isOpen={dialogManager.openWithDialogOpen}
-          onClose={dialogManager.closeOpenWithDialog}
-          data={{ filePath: dialogManager.openWithDialogFile }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <OpenWithDialog
-              isOpen={dialogManager.openWithDialogOpen}
-              onClose={dialogManager.closeOpenWithDialog}
-              filePath={dialogManager.openWithDialogFile}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <OpenWithDialog
+            isOpen={dialogManager.openWithDialogOpen}
+            onClose={dialogManager.closeOpenWithDialog}
+            filePath={dialogManager.openWithDialogFile}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* Compress Dialog */}
-      {hasCompressExt ? (
-        <ExtensionDialog
-          dialogId="compress-dialog"
-          isOpen={dialogManager.compressDialogOpen}
-          onClose={dialogManager.closeCompressDialog}
-          data={{
-            files: dialogManager.compressDialogFiles,
-            onComplete: () => refetch(),
-          }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <CompressDialog
-              isOpen={dialogManager.compressDialogOpen}
-              onClose={dialogManager.closeCompressDialog}
-              onComplete={() => refetch()}
-              files={dialogManager.compressDialogFiles}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <CompressDialog
+            isOpen={dialogManager.compressDialogOpen}
+            onClose={dialogManager.closeCompressDialog}
+            onComplete={() => refetch()}
+            files={dialogManager.compressDialogFiles}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* Bulk Rename Dialog */}
-      {hasBulkRenameExt ? (
-        <ExtensionDialog
-          dialogId="bulk-rename-dialog"
-          isOpen={dialogManager.bulkRenameDialogOpen}
-          onClose={dialogManager.closeBulkRenameDialog}
-          data={{
-            files: dialogManager.bulkRenameDialogFiles,
-            onComplete: () => refetch(),
-          }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <BulkRenameDialog
-              isOpen={dialogManager.bulkRenameDialogOpen}
-              onClose={dialogManager.closeBulkRenameDialog}
-              files={dialogManager.bulkRenameDialogFiles}
-              onComplete={() => refetch()}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <BulkRenameDialog
+            isOpen={dialogManager.bulkRenameDialogOpen}
+            onClose={dialogManager.closeBulkRenameDialog}
+            files={dialogManager.bulkRenameDialogFiles}
+            onComplete={() => refetch()}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* File Tags Dialog */}
-      {hasTagsExt ? (
-        <ExtensionDialog
-          dialogId="file-tags-dialog"
-          isOpen={dialogManager.fileTagsDialogOpen}
-          onClose={dialogManager.closeFileTagsDialog}
-          data={{ filePath: dialogManager.fileTagsDialogFile }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <FileTagsDialog
-              isOpen={dialogManager.fileTagsDialogOpen}
-              onClose={dialogManager.closeFileTagsDialog}
-              filePath={dialogManager.fileTagsDialogFile}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <FileTagsDialog
+            isOpen={dialogManager.fileTagsDialogOpen}
+            onClose={dialogManager.closeFileTagsDialog}
+            filePath={dialogManager.fileTagsDialogFile}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* File Details Dialog (stays built-in — not one of the 7 extracted) */}
       <ErrorBoundary>
@@ -278,28 +192,16 @@ const DialogLayer = ({
       </ErrorBoundary>
 
       {/* Extract Dialog */}
-      {hasExtractExt ? (
-        <ExtensionDialog
-          dialogId="extract-dialog"
-          isOpen={dialogManager.extractDialogOpen}
-          onClose={dialogManager.closeExtractDialog}
-          data={{
-            archivePath: dialogManager.extractDialogFile,
-            onComplete: () => refetch(),
-          }}
-        />
-      ) : (
-        <ErrorBoundary>
-          <React.Suspense fallback={null}>
-            <ExtractDialog
-              isOpen={dialogManager.extractDialogOpen}
-              onClose={dialogManager.closeExtractDialog}
-              onComplete={() => refetch()}
-              archivePath={dialogManager.extractDialogFile}
-            />
-          </React.Suspense>
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <React.Suspense fallback={null}>
+          <ExtractDialog
+            isOpen={dialogManager.extractDialogOpen}
+            onClose={dialogManager.closeExtractDialog}
+            onComplete={() => refetch()}
+            archivePath={dialogManager.extractDialogFile}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
 
       {/* Encryption Dialog */}
       <ErrorBoundary>
@@ -379,14 +281,6 @@ const DialogLayer = ({
         </React.Suspense>
       </ErrorBoundary>
 
-      {/* Advanced Selection Extension */}
-      <AdvancedSelectionExtension
-        files={sortedFiles}
-        selectedFiles={selectedFiles}
-        setSelectedFiles={setSelectedFiles}
-        showToast={toast}
-      />
-
       {/* Advanced Selection Dialog */}
       <AdvancedSelectDialog
         isOpen={dialogManager.showAdvancedSelect}
@@ -440,45 +334,8 @@ const DialogLayer = ({
           onResolve={fileConflict.resolve}
         />
       )}
-
-      {/* Extension-registered dialogs (opened via extensionHost.openDialog) */}
-      <ExtensionDialogRenderer />
     </>
   );
-};
-
-/**
- * Renders extension dialogs that were opened via extensionHost.openDialog().
- * These are dialogs opened programmatically by extensions themselves.
- */
-const ExtensionDialogRenderer = () => {
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
-
-  React.useEffect(() => {
-    const unsub = extensionHost.onChange(forceUpdate);
-    return unsub;
-  }, []);
-
-  const openDialogs = extensionHost.getOpenDialogs();
-  const elements: React.ReactElement[] = [];
-
-  openDialogs.forEach((data, dialogId) => {
-    const renderer = extensionHost.getDialogRenderer(dialogId);
-    if (renderer) {
-      elements.push(
-        // eslint-disable-next-line react/no-array-index-key
-        <ErrorBoundary key={dialogId}>
-          {renderer({
-            isOpen: true,
-            onClose: () => extensionHost.closeDialog(dialogId),
-            data,
-          })}
-        </ErrorBoundary>,
-      );
-    }
-  });
-
-  return <>{elements}</>;
 };
 
 export default DialogLayer;

@@ -6,7 +6,6 @@ import { useFolderSizes } from '@/hooks/use-folder-sizes';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { useCollectionFiles } from '@/hooks/use-collection-files';
 import type { EditorGroup } from '@/types/split-view';
-import { extensionHost } from '@/lib/extension-host';
 import { type FileCollection, applyCollectionToFiles } from '@/lib/collections';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import PaneTabBar from './PaneTabBar';
@@ -24,7 +23,6 @@ import TrashPage from '@/components/TrashPage';
 import FileComparisonPage from '@/pages/FileComparisonPage';
 import PaneFileExplorer from './PaneFileExplorer';
 
-const ChatFileView = React.lazy(() => import('@/pages/ChatFileView'));
 const FileEditorView = React.lazy(() => import('@/pages/FileEditorView'));
 
 export interface SharedPaneActions {
@@ -60,7 +58,6 @@ export interface SharedPaneActions {
 
   // Advanced selection
   onSelectAll: (files: FileEntry[]) => void;
-  onAdvancedSelection: () => void;
 
   // Quick Look
   onQuickLook?: (file: FileEntry) => void;
@@ -182,7 +179,6 @@ export default function EditorGroupPane({
     onGDriveNavigate: _onGDriveNavigate,
     onGDriveFileSelect: _onGDriveFileSelect,
     onError,
-    onAdvancedSelection,
     onQuickLook,
     renameFileInline,
   } = sharedActions;
@@ -545,33 +541,7 @@ export default function EditorGroupPane({
       );
     }
 
-    // Chat file view
-    if (activeTab?.path?.endsWith('.chat')) {
-      return (
-        <div className="flex-1 overflow-auto">
-          <React.Suspense
-            fallback={
-              <div className="text-xp-text-muted flex h-full items-center justify-center">
-                Loading chat...
-              </div>
-            }
-          >
-            <ChatFileView filePath={activeTab.path} />
-          </React.Suspense>
-        </div>
-      );
-    }
-
-    // Editor tab (text/code files) — check extension editors first, fallback to built-in
     if (activeTab?.type === 'editor' && activeTab.path) {
-      const extEditor = extensionHost.getEditorForFile(activeTab.path);
-      if (extEditor) {
-        return (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {extEditor.render({ filePath: activeTab.path })}
-          </div>
-        );
-      }
       return (
         <div className="flex flex-1 flex-col overflow-hidden">
           <React.Suspense
@@ -616,7 +586,6 @@ export default function EditorGroupPane({
         calculateFolderSize={calculateFolderSize}
         setBottomPanelCollapsed={setBottomPanelCollapsed}
         setBottomPanelTab={setBottomPanelTab}
-        onAdvancedSelection={onAdvancedSelection}
         onQuickLook={onQuickLook}
         onRenameFile={renameFileInline}
       />

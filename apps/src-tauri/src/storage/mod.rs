@@ -6,12 +6,8 @@
 //   - tags:               File tags & hierarchical tag categories
 //   - notes:              File notes & file annotations
 //   - metadata:           Custom metadata fields
-//   - extensions_storage: Extension-scoped key-value storage
 
 mod bookmarks;
-mod chat;
-pub mod chat_files;
-mod extensions_storage;
 mod metadata;
 mod notes;
 mod recent;
@@ -19,8 +15,6 @@ mod tags;
 
 // Re-export everything so downstream code using `crate::storage::*` keeps working.
 pub use bookmarks::*;
-pub use chat::*;
-pub use extensions_storage::*;
 pub use metadata::*;
 pub use notes::*;
 pub use recent::*;
@@ -86,29 +80,6 @@ pub struct FileRecord {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Extension {
-    pub id: i32,
-    pub name: String,
-    pub description: String,
-    pub version: String,
-    pub author: String,
-    pub icon_url: Option<String>,
-    pub is_active: bool,
-    pub install_url: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct StoredChatMessage {
-    pub id: i32,
-    pub session_id: String,
-    pub role: String, // 'user' or 'assistant'
-    pub content: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserSettings {
     pub id: i32,
     pub user_id: i32,
@@ -126,13 +97,9 @@ pub struct UserSettings {
 pub struct Storage {
     users: HashMap<i32, User>,
     files: HashMap<i32, FileRecord>,
-    extensions: HashMap<i32, Extension>,
-    chat_messages: HashMap<i32, StoredChatMessage>,
     user_settings: HashMap<i32, UserSettings>,
 
     current_file_id: i32,
-    current_extension_id: i32,
-    current_chat_id: i32,
 }
 
 impl Default for Storage {
@@ -146,12 +113,8 @@ impl Storage {
         let mut storage = Self {
             users: HashMap::new(),
             files: HashMap::new(),
-            extensions: HashMap::new(),
-            chat_messages: HashMap::new(),
             user_settings: HashMap::new(),
             current_file_id: 1,
-            current_extension_id: 1,
-            current_chat_id: 1,
         };
         storage.seed_data();
         storage
@@ -179,39 +142,6 @@ impl Storage {
             updated_at: chrono::Utc::now().to_rfc3339(),
         };
         self.user_settings.insert(1, default_settings);
-
-        // Create sample extensions
-        let sample_extensions = vec![
-            Extension {
-                id: 1,
-                name: "Theme Studio".to_string(),
-                description: "Customize your file explorer themes".to_string(),
-                version: "1.0.0".to_string(),
-                author: "Xplorer Team".to_string(),
-                icon_url: Some("/icons/theme-studio.svg".to_string()),
-                is_active: true,
-                install_url: None,
-                created_at: chrono::Utc::now().to_rfc3339(),
-                updated_at: chrono::Utc::now().to_rfc3339(),
-            },
-            Extension {
-                id: 2,
-                name: "Code Preview".to_string(),
-                description: "Preview code files with syntax highlighting".to_string(),
-                version: "2.1.0".to_string(),
-                author: "DevTools Inc".to_string(),
-                icon_url: Some("/icons/code-preview.svg".to_string()),
-                is_active: true,
-                install_url: None,
-                created_at: chrono::Utc::now().to_rfc3339(),
-                updated_at: chrono::Utc::now().to_rfc3339(),
-            },
-        ];
-
-        for ext in sample_extensions {
-            self.extensions.insert(ext.id, ext);
-        }
-        self.current_extension_id = 3;
     }
 
     // File methods
@@ -297,83 +227,6 @@ impl Storage {
         tags.into_iter().collect()
     }
 
-    // Extension methods
-    pub fn get_extensions(&self) -> Vec<&Extension> {
-        self.extensions.values().collect()
-    }
-
-    pub fn get_active_extensions(&self) -> Vec<&Extension> {
-        self.extensions.values().filter(|e| e.is_active).collect()
-    }
-
-    pub fn create_extension(
-        &mut self,
-        name: String,
-        description: String,
-        version: String,
-        author: String,
-    ) -> Extension {
-        let extension = Extension {
-            id: self.current_extension_id,
-            name,
-            description,
-            version,
-            author,
-            icon_url: None,
-            is_active: false,
-            install_url: None,
-            created_at: chrono::Utc::now().to_rfc3339(),
-            updated_at: chrono::Utc::now().to_rfc3339(),
-        };
-
-        self.extensions
-            .insert(self.current_extension_id, extension.clone());
-        self.current_extension_id += 1;
-        extension
-    }
-
-    pub fn update_extension(&mut self, id: i32, is_active: bool) -> Option<&Extension> {
-        if let Some(extension) = self.extensions.get_mut(&id) {
-            extension.is_active = is_active;
-            extension.updated_at = chrono::Utc::now().to_rfc3339();
-            Some(extension)
-        } else {
-            None
-        }
-    }
-
-    pub fn delete_extension(&mut self, id: i32) -> bool {
-        self.extensions.remove(&id).is_some()
-    }
-
-    // Chat methods
-    pub fn get_chat_messages(&self, session_id: &str) -> Vec<&StoredChatMessage> {
-        self.chat_messages
-            .values()
-            .filter(|m| m.session_id == session_id)
-            .collect()
-    }
-
-    pub fn create_chat_message(
-        &mut self,
-        session_id: String,
-        role: String,
-        content: String,
-    ) -> StoredChatMessage {
-        let message = StoredChatMessage {
-            id: self.current_chat_id,
-            session_id,
-            role,
-            content,
-            created_at: chrono::Utc::now().to_rfc3339(),
-        };
-
-        self.chat_messages
-            .insert(self.current_chat_id, message.clone());
-        self.current_chat_id += 1;
-        message
-    }
-
     // User settings methods
     pub fn get_user_settings(&self, user_id: i32) -> Option<&UserSettings> {
         self.user_settings.values().find(|s| s.user_id == user_id)
@@ -441,7 +294,6 @@ mod tests {
     fn test_storage_initialization() {
         let storage = Storage::new();
         assert!(!storage.users.is_empty());
-        assert!(storage.extensions.len() >= 2); // Sample extensions
         assert_eq!(storage.current_file_id, 1);
     }
 
@@ -466,48 +318,7 @@ mod tests {
         assert_eq!(retrieved.unwrap().name, "test.txt");
     }
 
-    #[test]
-    fn test_extension_operations() {
-        let mut storage = Storage::new();
-
-        let extension = storage.create_extension(
-            "test-ext".to_string(),
-            "Test extension".to_string(),
-            "1.0.0".to_string(),
-            "testdev".to_string(),
-        );
-
-        assert_eq!(extension.name, "test-ext");
-        assert_eq!(extension.version, "1.0.0");
-        assert!(!extension.is_active); // Should start inactive
-
-        // Test activation
-        let updated = storage.update_extension(extension.id, true);
-        assert!(updated.is_some());
-        assert!(updated.unwrap().is_active);
-    }
-
-    #[test]
-    fn test_chat_operations() {
-        let mut storage = Storage::new();
-
-        let message = storage.create_chat_message(
-            "session-123".to_string(),
-            "user".to_string(),
-            "Hello, world!".to_string(),
-        );
-
-        assert_eq!(message.session_id, "session-123");
-        assert_eq!(message.role, "user");
-        assert_eq!(message.content, "Hello, world!");
-
-        // Test retrieval by session
-        let messages = storage.get_chat_messages("session-123");
-        assert_eq!(messages.len(), 1);
-        assert_eq!(messages[0].content, "Hello, world!");
-    }
-
-    // ─── Additional file CRUD tests ─────────────────────────────────────
+    // ─── User settings tests ────────────────────────────────────────────
 
     #[test]
     fn test_file_creation_increments_id() {
@@ -644,161 +455,6 @@ mod tests {
         let children = storage.get_files(Some(root.id));
         assert_eq!(children.len(), 1);
         assert_eq!(children[0].name, "child.txt");
-    }
-
-    // ─── Extension CRUD tests ───────────────────────────────────────────
-
-    #[test]
-    fn test_extension_creation_increments_id() {
-        let mut storage = Storage::new();
-        let e1 =
-            storage.create_extension("ext1".into(), "desc1".into(), "1.0".into(), "auth1".into());
-        let e2 =
-            storage.create_extension("ext2".into(), "desc2".into(), "1.0".into(), "auth2".into());
-        assert_ne!(e1.id, e2.id);
-        assert_eq!(e2.id, e1.id + 1);
-    }
-
-    #[test]
-    fn test_extension_starts_inactive() {
-        let mut storage = Storage::new();
-        let ext = storage.create_extension("test".into(), "d".into(), "1.0".into(), "a".into());
-        assert!(!ext.is_active, "new extension should start inactive");
-    }
-
-    #[test]
-    fn test_activate_and_deactivate_extension() {
-        let mut storage = Storage::new();
-        let ext = storage.create_extension("toggle".into(), "d".into(), "1.0".into(), "a".into());
-        let id = ext.id;
-
-        // Activate
-        let activated = storage.update_extension(id, true);
-        assert!(activated.is_some());
-        assert!(activated.unwrap().is_active);
-
-        // Deactivate
-        let deactivated = storage.update_extension(id, false);
-        assert!(deactivated.is_some());
-        assert!(!deactivated.unwrap().is_active);
-    }
-
-    #[test]
-    fn test_update_nonexistent_extension_returns_none() {
-        let mut storage = Storage::new();
-        assert!(storage.update_extension(9999, true).is_none());
-    }
-
-    #[test]
-    fn test_delete_extension() {
-        let mut storage = Storage::new();
-        let ext =
-            storage.create_extension("disposable".into(), "d".into(), "1.0".into(), "a".into());
-        let id = ext.id;
-
-        assert!(storage.delete_extension(id));
-        // Verify it's gone from the extensions list
-        let all_exts = storage.get_extensions();
-        assert!(all_exts.iter().all(|e| e.id != id));
-    }
-
-    #[test]
-    fn test_delete_nonexistent_extension_returns_false() {
-        let mut storage = Storage::new();
-        assert!(!storage.delete_extension(9999));
-    }
-
-    #[test]
-    fn test_get_active_extensions() {
-        let mut storage = Storage::new();
-        // Seed data already has 2 active extensions
-        let initially_active = storage.get_active_extensions().len();
-
-        let ext = storage.create_extension("inactive".into(), "d".into(), "1.0".into(), "a".into());
-        // New extension is inactive, so active count should be unchanged
-        assert_eq!(storage.get_active_extensions().len(), initially_active);
-
-        // Activate it
-        storage.update_extension(ext.id, true);
-        assert_eq!(storage.get_active_extensions().len(), initially_active + 1);
-    }
-
-    // ─── Chat message tests ─────────────────────────────────────────────
-
-    #[test]
-    fn test_chat_messages_multiple_sessions() {
-        let mut storage = Storage::new();
-        storage.create_chat_message("sess-a".into(), "user".into(), "msg1".into());
-        storage.create_chat_message("sess-a".into(), "assistant".into(), "reply1".into());
-        storage.create_chat_message("sess-b".into(), "user".into(), "msg2".into());
-
-        let sess_a = storage.get_chat_messages("sess-a");
-        assert_eq!(sess_a.len(), 2);
-        assert!(sess_a.iter().any(|m| m.role == "user"));
-        assert!(sess_a.iter().any(|m| m.role == "assistant"));
-
-        let sess_b = storage.get_chat_messages("sess-b");
-        assert_eq!(sess_b.len(), 1);
-
-        let empty = storage.get_chat_messages("nonexistent-session");
-        assert!(empty.is_empty());
-    }
-
-    #[test]
-    fn test_chat_message_ids_are_unique() {
-        let mut storage = Storage::new();
-        let m1 = storage.create_chat_message("s1".into(), "user".into(), "a".into());
-        let m2 = storage.create_chat_message("s1".into(), "user".into(), "b".into());
-        assert_ne!(m1.id, m2.id);
-    }
-
-    // ─── User settings tests ────────────────────────────────────────────
-
-    #[test]
-    fn test_default_user_settings() {
-        let storage = Storage::new();
-        let settings = storage.get_user_settings(1);
-        assert!(settings.is_some(), "default user should have settings");
-        let s = settings.unwrap();
-        assert_eq!(s.theme, "dark");
-        assert_eq!(s.view_mode, "grid");
-        assert!(!s.show_hidden_files);
-    }
-
-    #[test]
-    fn test_update_user_settings_theme() {
-        let mut storage = Storage::new();
-        let updated = storage.update_user_settings(1, Some("light".into()), None, None);
-        assert!(updated.is_some());
-        assert_eq!(updated.unwrap().theme, "light");
-
-        // Other fields should remain unchanged
-        let settings = storage.get_user_settings(1).unwrap();
-        assert_eq!(settings.view_mode, "grid");
-    }
-
-    #[test]
-    fn test_update_user_settings_multiple_fields() {
-        let mut storage = Storage::new();
-        let updated = storage.update_user_settings(
-            1,
-            Some("monokai".into()),
-            Some("list".into()),
-            Some(true),
-        );
-        assert!(updated.is_some());
-        let s = updated.unwrap();
-        assert_eq!(s.theme, "monokai");
-        assert_eq!(s.view_mode, "list");
-        assert!(s.show_hidden_files);
-    }
-
-    #[test]
-    fn test_update_nonexistent_user_settings_returns_none() {
-        let mut storage = Storage::new();
-        assert!(storage
-            .update_user_settings(9999, Some("x".into()), None, None)
-            .is_none());
     }
 
     // ─── Struct serialization round-trip tests ──────────────────────────

@@ -23,9 +23,6 @@ const PathBookmarksDialog = React.lazy(() => import('@/components/dialogs/PathBo
 const CrossTabOperationsDialog = React.lazy(
   () => import('@/components/dialogs/CrossTabOperationsDialog'),
 );
-const ExtensionPermissionDialog = React.lazy(
-  () => import('@/components/dialogs/ExtensionPermissionDialog'),
-);
 const WorkspaceLayoutDialog = React.lazy(
   () => import('@/components/dialogs/WorkspaceLayoutDialog'),
 );
@@ -363,9 +360,6 @@ const DialogsOverlay = ({
 
         {/* Beta Warning (first launch) */}
         <BetaWarningDialog />
-
-        {/* Extension Permission Consent Dialog */}
-        <ExtensionPermissionDialog />
 
         {/* Onboarding Tour */}
         <TourOverlay />

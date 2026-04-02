@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TauriAPI, type FileEntry } from '@/lib/tauri-api';
 import { formatFileSize } from '@/lib/utils';
 import { isEditableFile } from '@/lib/editable-files';
-import { extensionHost } from '@/lib/extension-host';
-import { toast } from '@/hooks/use-toast';
 import type { TabItem } from '@/types/split-view';
 import type { VimModeState } from '@/hooks/use-vim-mode';
 import VimModeIndicator from '@/components/explorer/VimModeIndicator';
@@ -344,19 +342,6 @@ const StatusBar = ({ files, selectedFiles, currentPath, activeTab, vimState }: S
     ? gitInfo.modifiedCount + gitInfo.stagedCount + gitInfo.untrackedCount
     : 0;
 
-  // Handle click on the git branch button
-  const handleGitClick = useCallback(() => {
-    if (extensionHost.isExtensionActive('git')) {
-      // Open the git extension's bottom tab panel
-      window.dispatchEvent(new CustomEvent('xplorer-set-bottom-tab', { detail: { tab: 'git' } }));
-    } else {
-      toast({
-        title: t('statusBar.gitNotInstalled'),
-        description: t('statusBar.gitNotInstalledDesc'),
-      });
-    }
-  }, [t]);
-
   return (
     <div
       role="status"
@@ -436,20 +421,15 @@ const StatusBar = ({ files, selectedFiles, currentPath, activeTab, vimState }: S
         {/* Git info */}
         {gitInfo && (
           <>
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10 active:bg-white/15"
+            <div
+              className="flex items-center gap-1 px-1.5 py-0.5"
               style={{
-                cursor: 'pointer',
-                border: 'none',
-                background: 'transparent',
                 color: 'inherit',
                 fontSize: 'inherit',
                 lineHeight: 'inherit',
               }}
-              title={gitTooltip || t('statusBar.openGitPanel')}
-              aria-label={gitTooltip || t('statusBar.openGitPanel')}
-              onClick={handleGitClick}
+              title={gitTooltip || gitInfo.branch}
+              aria-label={gitTooltip || gitInfo.branch}
             >
               <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
               {gitInfo.branch}
@@ -470,7 +450,7 @@ const StatusBar = ({ files, selectedFiles, currentPath, activeTab, vimState }: S
                   {totalGitChanges}
                 </span>
               )}
-            </button>
+            </div>
             <Separator />
           </>
         )}

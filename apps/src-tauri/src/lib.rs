@@ -1,14 +1,11 @@
 pub mod error;
 pub mod utils;
 
-pub mod agent;
-pub mod ai;
 pub mod api;
 pub mod audit_log;
 pub mod backup;
 pub mod document_extractor;
 pub mod duplicate_finder;
-pub mod extensions;
 pub mod file_lib;
 pub mod file_organizer;
 pub mod file_versions;

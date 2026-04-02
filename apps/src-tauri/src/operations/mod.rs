@@ -1,5 +1,4 @@
 pub mod accelerated_ops;
-pub mod agent_ops;
 pub mod analytics_ops;
 pub mod comparison_ops;
 pub mod compression_ops;
@@ -21,7 +20,6 @@ pub mod types;
 pub mod undo_redo_ops;
 
 pub use accelerated_ops::*;
-pub use agent_ops::*;
 pub use analytics_ops::*;
 pub use comparison_ops::*;
 pub use compression_ops::*;

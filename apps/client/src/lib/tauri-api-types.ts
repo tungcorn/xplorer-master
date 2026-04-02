@@ -185,43 +185,6 @@ export interface FileSystemNode {
   error?: string; // If there was an error reading
 }
 
-// ── Agent types ──────────────────────────────────────────────────────────────
-
-export interface AgentProgress {
-  current_path: string;
-  processed_files: number;
-  processed_dirs: number;
-  total_size: number;
-  recursion_depth: number;
-  status: string;
-}
-
-// Claude Agent types — redacted settings (no plaintext keys)
-export interface SafeAgentSettings {
-  enabled: boolean;
-  has_api_key: boolean;
-  has_openai_api_key: boolean;
-  model: string;
-  max_turns: number;
-  auto_approve: boolean;
-  thinking_enabled: boolean;
-  thinking_budget: number;
-}
-
-export interface UpdateAgentSettingsPayload {
-  enabled: boolean;
-  model: string;
-  max_turns: number;
-  auto_approve: boolean;
-  thinking_enabled: boolean;
-  thinking_budget: number;
-}
-
-export interface UpdateAgentApiKeysPayload {
-  api_key?: string;
-  openai_api_key?: string;
-}
-
 // ── Bulk rename types ────────────────────────────────────────────────────────
 
 export interface BulkRenameResult {
@@ -405,122 +368,6 @@ export interface FileComparisonResult {
   };
 }
 
-// ── Extension types ──────────────────────────────────────────────────────────
-
-// Extension types (mirrors Rust structs in extensions/types.rs)
-export interface ExtensionManifestInfo {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-  version: string;
-  author: string;
-  category: string;
-  icon?: string;
-  keywords?: string[];
-  homepage?: string;
-  repository?: string;
-  license?: string;
-  permissions?: string[];
-  activation_events?: string[];
-  main?: string;
-  contributes?: {
-    panels?: Array<{
-      id: string;
-      title: string;
-      location: string;
-      icon?: string;
-      when?: string;
-    }>;
-    commands?: Array<{
-      command: string;
-      title: string;
-      category?: string;
-      icon?: string;
-    }>;
-    themes?: string[];
-    file_types?: Array<{
-      id: string;
-      extensions: string[];
-      mime_types?: string[];
-      icon?: string;
-      language_id?: string;
-    }>;
-    context_menus?: Array<{
-      command: string;
-      when?: string;
-      group?: string;
-    }>;
-    keybindings?: Array<{
-      command: string;
-      key: string;
-      when?: string;
-      title?: string;
-    }>;
-  };
-}
-
-export interface ExtensionPackageInfo {
-  manifest: ExtensionManifestInfo;
-  path: string;
-  is_active: boolean;
-  is_installed: boolean;
-  verified?: boolean;
-}
-
-// ── Chat types ───────────────────────────────────────────────────────────────
-
-export interface ChatFileData {
-  version: number;
-  model: string;
-  thinking_enabled: boolean;
-  context: ChatFileContext[];
-  messages: ChatFileMessage[];
-}
-
-export interface ChatFileMessage {
-  role: string;
-  content: string;
-  timestamp: number;
-  model?: string;
-  thinking?: string;
-}
-
-export interface ChatFileContext {
-  path: string;
-  name: string;
-}
-
-export interface ChatFileSummary {
-  message_count: number;
-  last_message_preview: string;
-  model: string;
-  last_updated: number;
-}
-
-// Chat history types
-export interface ChatHistoryMessage {
-  role: string;
-  content: string;
-  timestamp: number;
-}
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: ChatHistoryMessage[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ChatSessionSummary {
-  id: string;
-  title: string;
-  message_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
 // ── Sync types ───────────────────────────────────────────────────────────────
 
 export interface SyncResult {
@@ -669,35 +516,6 @@ export interface EnhancedSearchResult {
   total_scanned: number;
 }
 
-// AI Search re-ranking result
-export interface AISearchResult {
-  results: SearchResult[];
-  provider: string;
-  model: string;
-}
-
-// ── AI Index types ───────────────────────────────────────────────────────────
-
-// Phase 3: AI Index types
-export interface AIIndexStatus {
-  enabled: boolean;
-  total_indexed: number;
-  queue_length: number;
-  is_processing: boolean;
-  current_file?: string;
-  vision_model?: string;
-  embedding_model?: string;
-}
-
-export interface AIIndexEntry {
-  path: string;
-  description?: string;
-  extracted_text?: string;
-  tags: string[];
-  model_used: string;
-  indexed_at: number;
-}
-
 // ── Progress types ───────────────────────────────────────────────────────────
 
 export interface IndexingProgress {
@@ -783,14 +601,8 @@ export type ShortcutAction =
   | 'CloseTab'
   | 'NextTab'
   | 'PreviousTab'
-  // Terminal / AI
+  // Terminal
   | 'OpenTerminal'
-  | 'OpenAIAssistant'
-  | 'OpenExtensions'
-  // Extension operations
-  | {
-      ExtensionAction: { extension_id: string; action_id: string; params?: Record<string, string> };
-    }
   // Legacy
   | 'Save'
   | 'SaveAs'
